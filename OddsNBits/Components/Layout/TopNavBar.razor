@@ -1,0 +1,106 @@
+﻿@using System.Diagnostics
+@using System.ComponentModel.DataAnnotations
+@implements IDisposable
+
+@inject NavigationManager NavigationManager
+
+<HxNavbar CssClass="bg-body-tertiary fixed-top">
+    <HxNavbarBrand>Navbar</HxNavbarBrand>
+    <HxNavbarToggler />
+    <HxNavbarCollapse>
+        <HxNav CssClass="me-auto mb-2 mb-lg-0">
+            <HxNavLink Href="/">Home</HxNavLink>
+            <HxNavLink Href="/counter">Counter (for testing auth)</HxNavLink>
+            <HxDropdown>
+                <HxDropdownToggleElement ElementName="a" Caret="true" role="button">Dropdown</HxDropdownToggleElement>
+                <HxDropdownMenu>
+                    <HxDropdownItemNavLink Href="#">Action</HxDropdownItemNavLink>
+                    <HxDropdownItemNavLink Href="#">Another action</HxDropdownItemNavLink>
+                    <HxDropdownDivider />
+                    <HxDropdownItemNavLink Href="#">Something else here</HxDropdownItemNavLink>
+                </HxDropdownMenu>
+            </HxDropdown>
+            <HxNavLink Enabled="false">Disabled</HxNavLink>
+        </HxNav>
+        
+        @*This form seems to cause issues when using other forms such as the login form*@
+        @*<EditForm Model="@Input" method="post" FormName="SearchBar" OnValidSubmit="OnSearch">
+            <DataAnnotationsValidator />
+            <div class="d-flex">
+                <HxInputText CssClass="me-2" Placeholder="Search" @bind-Value="Input.Query" InputMode="InputMode.Search"/>
+                <ValidationMessage For="() => Input.Query" class="text-danger" />
+                <HxSubmit Color="ThemeColor.Success" Outline="true">Search</HxSubmit>
+            </div>
+        </EditForm>*@
+
+        <div class="d-flex px-3">
+            <AuthorizeView>
+                <Authorized>
+                    <HxNavLink Href="Account/Manage">
+                        <HxIcon Icon="@BootstrapIcon.Person"/> @context.User.Identity?.Name
+                    </HxNavLink>
+                    <div class="nav-item px-3">
+                        <form action="Account/Logout" method="post">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                            <button type="submit" class="nav-link">
+                                <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                            </button>
+                        </form>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink href="Account/Register" class="btn btn-primary">
+                        @*<span class="bi bi-person-nav-menu" aria-hidden="true"></span> *@Register
+                    </NavLink>
+
+                    <NavLink href="Account/Login" class="btn btn-primary" style="margin-left: 3px">
+                        @*<span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> *@Login
+                    </NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
+    </HxNavbarCollapse>
+</HxNavbar>
+
+
+
+@code {
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+    private void OnSearch()
+    {
+        // Temporary
+        Debug.WriteLine($"Search for {Input.Query}");
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        public string Query { get; set; } = "";
+
+    }
+
+}
