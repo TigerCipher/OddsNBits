@@ -1,0 +1,25 @@
+﻿@page "/blog"
+
+<PageScript Src="./Components/Pages/BlogPost.razor.js?counter" />
+
+<h1>Blog temp page</h1>
+
+<CodeSnippet>@CodeSample</CodeSnippet>
+
+
+@code {
+    private const string CodeSample = @"
+public class PersonModel
+{
+    public int Id { get; set; }
+    [Display(Name=""First Name"")]
+    public string Name { get; set; }
+    public string City { get; set; }
+    public string State { get; set; }
+    [BlazinHeaderFormat(""{0:C}"")]
+    public int Salary { get; set; }
+    [BlazinHeaderIgnore]
+    public string ThisColumnWontEvenShowUp { get; set; }
+}
+";
+}

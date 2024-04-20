@@ -1,0 +1,21 @@
+﻿@if (!string.IsNullOrWhiteSpace(Language))
+{
+    <pre><code class="language-@Language">
+            @ChildContent
+            </code></pre>
+}
+else
+{
+    <pre><code>
+            @ChildContent
+            </code></pre>
+}
+
+@code {
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public string? Language { get; set; }
+}
