@@ -5,7 +5,7 @@
 @inject NavigationManager NavigationManager
 
 <HxNavbar CssClass="bg-body-tertiary fixed-top">
-    <HxNavbarBrand>Navbar</HxNavbarBrand>
+    <HxNavbarBrand>Odds &amp; Bits</HxNavbarBrand>
     <HxNavbarToggler />
     <HxNavbarCollapse>
         <HxNav CssClass="me-auto mb-2 mb-lg-0">
@@ -36,26 +36,27 @@
         <div class="d-flex px-3">
             <AuthorizeView>
                 <Authorized>
-                    <HxNavLink Href="Account/Manage">
+                    <NavLink Href="Account/Manage" class="btn btn-light">
                         <HxIcon Icon="@BootstrapIcon.Person"/> @context.User.Identity?.Name
-                    </HxNavLink>
+                    </NavLink>
                     <div class="nav-item px-3">
                         <form action="Account/Logout" method="post">
                             <AntiforgeryToken />
                             <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                            <button type="submit" class="nav-link">
-                                <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                            </button>
+                            <HxSubmit Color="ThemeColor.Success" Outline="true">Logout</HxSubmit>
+                            @*<button type="submit" class="nav-link">
+                                Logout
+                            </button>*@
                         </form>
                     </div>
                 </Authorized>
                 <NotAuthorized>
                     <NavLink href="Account/Register" class="btn btn-primary">
-                        @*<span class="bi bi-person-nav-menu" aria-hidden="true"></span> *@Register
+                        Register
                     </NavLink>
 
                     <NavLink href="Account/Login" class="btn btn-primary" style="margin-left: 3px">
-                        @*<span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> *@Login
+                        Login
                     </NavLink>
                 </NotAuthorized>
             </AuthorizeView>
