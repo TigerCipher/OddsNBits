@@ -102,12 +102,12 @@ main {
 .odds-body {
 }
 
-@media (min-width: 641px) {
+/*@media (min-width: 641px) {
 
     .odds-body {
         min-height: 1600px;
     }
-}
+}*/
 
 odds-body .nav-link {
     display: block;
