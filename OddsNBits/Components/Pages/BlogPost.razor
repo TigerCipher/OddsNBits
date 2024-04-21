@@ -9,6 +9,7 @@
 
 @code {
     private const string CodeSample = @"
+// C#
 public class PersonModel
 {
     public int Id { get; set; }
@@ -21,5 +22,27 @@ public class PersonModel
     [BlazinHeaderIgnore]
     public string ThisColumnWontEvenShowUp { get; set; }
 }
+
+// Now C++
+class person
+{
+public:
+    person(int id, std::string name, std::string city, std::string state, int salary)
+        : m_id(id), m_name(std::move(name)), m_city(std::move(city)), m_state(std::move(state)), m_salary(salary)
+    {
+    }
+
+    constexpr int id() const { return m_id; }
+    constexpr const std::string& name() const { return m_name; }
+    constexpr const std::string& city() const { return m_city; }
+    constexpr const std::string& state() const { return m_state; }
+    constexpr int salary() const { return m_salary; }
+private:
+    int m_id;
+    std::string m_name;
+    std::string m_city;
+    std::string m_state;
+    int m_salary;
+};
 ";
 }
