@@ -1,0 +1,48 @@
+﻿@page "/category"
+
+
+<PageTitle>Category | Odds &amp; Bits</PageTitle>
+
+<!--------------------------------------
+Main
+--------------------------------------->
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-8">
+            <h5 class="font-weight-bold spanborder"><span>Featured in CATEGORY NAME</span></h5>
+            <div class="card border-0 mb-5 box-shadow">
+                <div style="background-image: url(img/demo/1.jpg); height: 350px; background-size: cover; background-repeat: no-repeat;">
+                </div>
+                <div class="card-body px-0 pb-0 d-flex flex-column align-items-start">
+                    <h2 class="h2 font-weight-bold">
+                        <NavLink class="text-dark" href="/blog">Some post title here</NavLink>
+                    </h2>
+                    <p class="card-text">
+                        Blah blah intro summary idk blah blah lipsum filler text here.
+                    </p>
+                    <div>
+                        <small class="d-block"><NavLink class="text-muted" href="./author.html">Author Name</NavLink></small>
+                        <small class="text-muted">Apr 21 · 5 min read</small>
+                    </div>
+                </div>
+            </div>
+            <h5 class="font-weight-bold spanborder"><span>Latest</span></h5>
+            <BlogList/>
+        </div>
+        <div class="col-md-4 pl-4">
+            <div class="sticky-top">
+                <h5 class="font-weight-bold spanborder"><span>Popular in CATEGORY NAME</span></h5>
+                <RankedList/>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*<div class="container pt-4 pb-4">
+    <SubscribeForm/>
+</div>*@
+<!-- End Main -->
+
+@code {
+
+}
