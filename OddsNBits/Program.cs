@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using OddsNBits.Components;
 using OddsNBits.Components.Account;
 using OddsNBits.Data;
+using SocialMediaSharingBlazor;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,7 @@ builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
 builder.Services.AddHxServices();
+builder.Services.AddSocialMediaSharing();
 
 builder.Services.AddAuthentication(options =>
     {
