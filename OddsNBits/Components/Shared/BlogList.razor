@@ -1,4 +1,4 @@
-﻿<div class="mb-3 d-flex justify-content-between">
+﻿@*<div class="mb-3 d-flex justify-content-between">
     <div class="pr-3">
         <h2 class="mb-1 h4 font-weight-bold">
             <NavLink class="text-dark" href="/blog">Featured post title here</NavLink>
@@ -42,9 +42,51 @@
         <small class="text-muted">Apr 21 &middot; 5 min read</small>
     </div>
     <img height="120" src="img/demo/5.jpg">
+</div>*@
+
+
+
+<div class="row justify-content-between">
+    @for (var c = 0; c < Columns; ++c)
+    {
+        <div class="col-md-@_columnWidth">
+
+            @for (var i = 0; i < Count; ++i)
+            {
+                <div class="mb-3 d-flex justify-content-between">
+                    <div class="pr-3">
+                        <h2 class="mb-1 h4 font-weight-bold">
+                            <NavLink class="text-dark" href="/blog">Post title here - @i</NavLink>
+                        </h2>
+                        <p>
+                            Post intro text here. Full intro or just first sentence?
+                        </p>
+                        <div class="card-text text-muted small">
+                            Author Name in CATEGORY NAME
+                        </div>
+                        <small class="text-muted">Apr 21 &middot; 5 min read</small>
+                    </div>
+                    <img height="120" src="img/demo/1.jpg">
+                </div>
+            }
+        </div>
+    }
 </div>
 
 
 @code {
+
+    [Parameter]
+    public int Count { get; set; } = 3;
+
+    [Parameter]
+    public int Columns { get; set; } = 1;
+
+    private int _columnWidth;
+
+    protected override void OnParametersSet()
+    {
+        _columnWidth = 12 / Columns;
+    }
 
 }

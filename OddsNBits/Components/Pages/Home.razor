@@ -27,7 +27,7 @@ MAIN
 --------------------------------------->
 <hr/>
 <div class="container">
-    <div class="row justify-content-between">
+    @*<div class="row justify-content-between">
         <div class="col-md-8">
             <h5 class="font-weight-bold spanborder"><span>Featured Posts</span></h5>
             <BlogList/>
@@ -36,8 +36,10 @@ MAIN
             <h5 class="font-weight-bold spanborder"><span>Popular</span></h5>
             <RankedList/>
         </div>
-    </div>
-    <hr/>
+    </div>*@
     <h5 class="font-weight-bold spanborder"><span>Latest Posts</span></h5>
+    <BlogList Columns="2" Count="3"/>
+    <hr/>
+    <h5 class="font-weight-bold spanborder"><span>Featured Posts</span></h5>
     <BlogListBlock/>
 </div>
