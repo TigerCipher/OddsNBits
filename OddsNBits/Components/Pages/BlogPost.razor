@@ -1,5 +1,8 @@
 ﻿@page "/blog"
+@using Microsoft.Extensions.Logging.Console
 
+@*
+@rendermode InteractiveServer*@
 
 
 <PageTitle>BLOG | Odds &amp; Bits</PageTitle>
@@ -70,6 +73,17 @@ MAIN
             @*<SubscribeForm />*@
         </div>
     </div>
+    @*<hr/>
+    Comments
+    <HxModelEditForm Model="Comment" Id="CommentFormId"> @*Seems to think the ID isn't supplied and does not work*@@*
+        <HxInputTextArea @bind-Value="Comment" Placeholder="Leave a comment"></HxInputTextArea>
+        <HxSubmit Color="ThemeColor.Success" OnClick="SubmitComment">Submit</HxSubmit>
+    </HxModelEditForm>
+    <hr/>
+    @if(_displayComment && !string.IsNullOrWhiteSpace(Comment))
+    {
+        <p>@Comment</p>
+    }*@
 </div>
 
 
@@ -119,4 +133,14 @@ def greet(name):
 
 print(greet('World'))
 ";
+
+    [SupplyParameterFromForm]
+    private string Comment { get; set; } = string.Empty;
+    private bool _displayComment = false;
+
+    private void SubmitComment()
+    {
+        _displayComment = true;
+        // TODO
+    }
 }

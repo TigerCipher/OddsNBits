@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 
 namespace OddsNBits.Data
@@ -5,6 +6,8 @@ namespace OddsNBits.Data
     // Add profile data for application users by adding properties to the ApplicationUser class
     public class ApplicationUser : IdentityUser
     {
+        [Required, MaxLength(35)]
+        public string DisplayName { get; set; }
     }
 
 }
