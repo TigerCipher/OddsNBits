@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using OddsNBits.Components;
 using OddsNBits.Components.Account;
 using OddsNBits.Data;
+using OddsNBits.Services;
 using SocialMediaSharingBlazor;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,7 +42,11 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+builder.Services.AddTransient<ISeederService, Seeder>();
+
 var app = builder.Build();
+
+await SeedData(app.Services);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -67,3 +72,14 @@ app.MapRazorComponents<App>()
 app.MapAdditionalIdentityEndpoints();
 
 app.Run();
+
+
+
+return;
+
+static async Task SeedData(IServiceProvider services)
+{
+    var scope = services.CreateScope();
+    var seedService = scope.ServiceProvider.GetRequiredService<ISeederService>();
+    await seedService.SeedDataAsync();
+}
