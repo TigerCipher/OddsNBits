@@ -16,9 +16,12 @@
 //     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // -------------------------------------------------------------------------------
 
+using System.Security.Claims;
+
 namespace OddsNBits.Helpers;
 
-public class Extensions
+public static class Extensions
 {
-    
+    public static string DisplayName(this ClaimsPrincipal principal) => principal.FindFirstValue(Globals.ClaimNames.DisplayName)!;
+    public static string UserId(this ClaimsPrincipal principal) => principal.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }

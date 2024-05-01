@@ -1,6 +1,7 @@
 ﻿@page "/Account/Manage"
 
 @using System.ComponentModel.DataAnnotations
+@using System.Diagnostics
 @using Microsoft.AspNetCore.Identity
 @using OddsNBits.Data
 
@@ -20,23 +21,29 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
             <div class="form-floating mb-3">
-                <input type="text" value="@username" class="form-control" placeholder="Please choose your username." disabled />
+                <input type="text" value="@_username" class="form-control" placeholder="Please choose your username." disabled />
                 <label for="username" class="form-label">Username</label>
             </div>
             <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
-                <label for="phone-number" class="form-label">Phone number</label>
-                <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
+                <InputText @bind-Value="Input.DisplayName" class="form-control" placeholder="Your Name" />
+                <label for="display-name" class="form-label">Display Name</label>
+                <ValidationMessage For="() => Input.DisplayName" class="text-danger" />
             </div>
+            @* <div class="form-floating mb-3"> *@
+            @*     <InputText @bind-Value="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." /> *@
+            @*     <label for="phone-number" class="form-label">Phone number</label> *@
+            @*     <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" /> *@
+            @* </div> *@
             <button type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
         </EditForm>
     </div>
 </div>
 
 @code {
-    private ApplicationUser user = default!;
-    private string? username;
-    private string? phoneNumber;
+    private ApplicationUser _user = default!;
+    private string? _username;
+    // private string? phoneNumber;
+    private string? _displayName;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -46,32 +53,50 @@
 
     protected override async Task OnInitializedAsync()
     {
-        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-        username = await UserManager.GetUserNameAsync(user);
-        phoneNumber = await UserManager.GetPhoneNumberAsync(user);
+        _user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        _username = await UserManager.GetUserNameAsync(_user);
+        // phoneNumber = await UserManager.GetPhoneNumberAsync(user);
+        _displayName = _user.DisplayName;
 
-        Input.PhoneNumber ??= phoneNumber;
+        Input.DisplayName ??= _displayName;
+        // Input.PhoneNumber ??= phoneNumber;
     }
 
     private async Task OnValidSubmitAsync()
     {
-        if (Input.PhoneNumber != phoneNumber)
+        // if (Input.PhoneNumber != phoneNumber)
+        // {
+        //     var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+        //     if (!setPhoneResult.Succeeded)
+        //     {
+        //         RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
+        //     }
+        // }
+
+        if(Input.DisplayName != _displayName)
         {
-            var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
-            if (!setPhoneResult.Succeeded)
+            _user.DisplayName = Input.DisplayName!;
+            var result = await UserManager.UpdateAsync(_user);
+            if(!result.Succeeded)
             {
-                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
+                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set display name.", HttpContext);
             }
         }
 
-        await SignInManager.RefreshSignInAsync(user);
+        // TODO: Need to update the display name gotten from claims principle for purpose of the nav bar profile link
+        await SignInManager.RefreshSignInAsync(_user);
         RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
     }
 
     private sealed class InputModel
     {
-        [Phone]
-        [Display(Name = "Phone number")]
-        public string? PhoneNumber { get; set; }
+        // [Phone]
+        // [Display(Name = "Phone number")]
+        // public string? PhoneNumber { get; set; }
+
+        [Required]
+        [StringLength(30, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 5)]
+        [Display(Name = "Display Name")]
+        public string? DisplayName { get; set; }
     }
 }
