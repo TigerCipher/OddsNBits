@@ -36,14 +36,17 @@
         <div class="d-flex px-3">
             <AuthorizeView>
                 <Authorized>
-                    <NavLink Href="Account/Manage" class="btn btn-light">
-                        <HxIcon Icon="@BootstrapIcon.Person" /> @context.User.DisplayName() - @context.User.UserId()
-                    </NavLink>
+                    <HxNavLink Href="Account/Manage">
+                        <HxIcon Icon="@BootstrapIcon.Person" /> @context.User.DisplayName()
+                    </HxNavLink>
+                    @* <NavLink Href="Account/Manage"> *@
+                    @*     <HxIcon Icon="@BootstrapIcon.Person"/> @context.User.DisplayName() *@
+                    @* </NavLink> *@
                     <div class="nav-item px-3">
                         <form action="Account/Logout" method="post">
-                            <AntiforgeryToken />
-                            <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                            <HxSubmit Color="ThemeColor.Success" Outline="true">Logout</HxSubmit>
+                            <AntiforgeryToken/>
+                            <input type="hidden" name="ReturnUrl" value="@currentUrl"/>
+                            <HxSubmit Color="ThemeColor.Danger" Outline="true">Logout</HxSubmit>
                             @*<button type="submit" class="nav-link">
                             Logout
                             </button>*@
