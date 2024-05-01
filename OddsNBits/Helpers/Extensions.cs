@@ -1,4 +1,4 @@
-// -------------------------------------------------------------------------------
+﻿// -------------------------------------------------------------------------------
 //     OddsNBits - A Blazor Web App serving as my dev log / blog site
 //     Copyright (C) 2024  Matt Rogers
 // 
@@ -15,16 +15,10 @@
 //     You should have received a copy of the GNU General Public License
 //     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // -------------------------------------------------------------------------------
-using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Identity;
 
-namespace OddsNBits.Data
+namespace OddsNBits.Helpers;
+
+public class Extensions
 {
-    // Add profile data for application users by adding properties to the ApplicationUser class
-    public class ApplicationUser : IdentityUser
-    {
-        [Required, MaxLength(35)]
-        public string DisplayName { get; set; }
-    }
-
+    
 }

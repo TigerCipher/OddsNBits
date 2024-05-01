@@ -1,6 +1,7 @@
 ﻿@page "/Account/Login"
 
 @using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using OddsNBits.Data
@@ -9,6 +10,7 @@
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject UserManager<ApplicationUser> UserManager
 
 <PageTitle>Log in</PageTitle>
 
@@ -18,7 +20,7 @@
     <div class="col-md-4">
         <section>
             <StatusMessage Message="@errorMessage" />
-            <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+            <EditForm Model="Input" method="post" OnValidSubmit="LoginAsync" FormName="login">
                 <DataAnnotationsValidator />
                 <h2>Use a local account to log in.</h2>
                 <hr />
@@ -86,17 +88,44 @@
         }
     }
 
-    public async Task LoginUser()
+    // public async Task LoginUser()
+    // {
+    //     // This doesn't count login failures towards account lockout
+    //     // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+    //     var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+    //     if (result.Succeeded)
+    //     {
+    //         Logger.LogInformation("User logged in.");
+    //         RedirectManager.RedirectTo(ReturnUrl);
+    //     }
+    //     else if (result.RequiresTwoFactor)
+    //     {
+    //         RedirectManager.RedirectTo(
+    //             "Account/LoginWith2fa",
+    //             new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+    //     }
+    //     else if (result.IsLockedOut)
+    //     {
+    //         Logger.LogWarning("User account locked out.");
+    //         RedirectManager.RedirectTo("Account/Lockout");
+    //     }
+    //     else
+    //     {
+    //         errorMessage = "Error: Invalid login attempt.";
+    //     }
+    // }
+
+    private async Task LoginAsync()
     {
-        // This doesn't count login failures towards account lockout
-        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-        if (result.Succeeded)
+        var user = await UserManager.FindByEmailAsync(Input.Email);
+        if(user is null)
         {
-            Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
+            errorMessage = "Error: Invalid login attempt. Unknown Email.";
+            return;
         }
-        else if (result.RequiresTwoFactor)
+
+        var result = await SignInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
+        if (result.RequiresTwoFactor)
         {
             RedirectManager.RedirectTo(
                 "Account/LoginWith2fa",
@@ -106,11 +135,17 @@
         {
             Logger.LogWarning("User account locked out.");
             RedirectManager.RedirectTo("Account/Lockout");
-        }
-        else
+        }else if(!result.Succeeded)
         {
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = "Error: Invalid login attempt. Incorrect password.";
+            return;
         }
+
+        Claim[] claims = [new Claim(Globals.ClaimNames.DisplayName, user.DisplayName)];
+        await SignInManager.SignInWithClaimsAsync(user, Input.RememberMe, claims);
+
+        Logger.LogInformation("User logged in.");
+        RedirectManager.RedirectTo(ReturnUrl);
     }
 
     private sealed class InputModel
