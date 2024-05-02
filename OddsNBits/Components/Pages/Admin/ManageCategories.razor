@@ -9,6 +9,7 @@
 @inject ICategoryService CategoryService
 @inject IHxMessageBoxService MessageBox
 @inject IHxMessengerService Messenger
+@inject NavigationManager NavigationManager
 
 <DashboardHeader Title="Manage Categories">
     <ActionButtons>
@@ -134,6 +135,7 @@
         category.Featured = !category.Featured;
         await CategoryService.SaveCategoryAsync(category);
         _isLoading = false;
+        NavigationManager.Refresh();
     }
 
     private void OnEdit(Category category) => _category = category.Clone();

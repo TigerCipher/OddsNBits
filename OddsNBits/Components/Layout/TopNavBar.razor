@@ -1,26 +1,30 @@
 ﻿@using System.Diagnostics
 @using System.ComponentModel.DataAnnotations
+@using OddsNBits.Data.Entities
 @implements IDisposable
 
 @inject NavigationManager NavigationManager
+@inject ICategoryService CategoryService
 
-<HxNavbar CssClass="oddsnav bg-white fixed-top container navbar-light">
+<HxNavbar CssClass="oddsnav bg-white fixed-top navbar-light">
     <HxNavbarBrand>Odds &amp; Bits</HxNavbarBrand>
     <HxNavbarToggler />
     <HxNavbarCollapse>
         <HxNav CssClass="me-auto mb-2 mb-lg-0">
             <HxNavLink Href="/">Home</HxNavLink>
-            <HxNavLink Href="/counter">Counter (for testing auth)</HxNavLink>
-            <HxDropdown>
-                <HxDropdownToggleElement ElementName="a" Caret="true" role="button">Categories</HxDropdownToggleElement>
-                <HxDropdownMenu>
-                    <HxDropdownItemNavLink Href="/category">Category</HxDropdownItemNavLink>
-                    <HxDropdownItemNavLink Href="#">Another action</HxDropdownItemNavLink>
-                    <HxDropdownDivider />
-                    <HxDropdownItemNavLink Href="#">Something else here</HxDropdownItemNavLink>
-                </HxDropdownMenu>
-            </HxDropdown>
-            <HxNavLink Enabled="false">Disabled</HxNavLink>
+            @foreach(var c in _categories)
+            {
+                <HxNavLink Href="@c.Slug">@c.Name</HxNavLink>
+            }
+            @* <HxDropdown> *@
+            @*     <HxDropdownToggleElement ElementName="a" Caret="true" role="button">Categories</HxDropdownToggleElement> *@
+            @*     <HxDropdownMenu> *@
+            @*         <HxDropdownItemNavLink Href="/category">Category</HxDropdownItemNavLink> *@
+            @*         <HxDropdownItemNavLink Href="#">Another action</HxDropdownItemNavLink> *@
+            @*         <HxDropdownDivider /> *@
+            @*         <HxDropdownItemNavLink Href="#">Something else here</HxDropdownItemNavLink> *@
+            @*     </HxDropdownMenu> *@
+            @* </HxDropdown> *@
         </HxNav>
 
         @*This form seems to cause issues when using other forms such as the login form*@
@@ -57,9 +61,9 @@
                     </div>
                 </Authorized>
                 <NotAuthorized>
-                    <NavLink href="Account/Register" class="btn btn-primary">
-                        Register
-                    </NavLink>
+                    @* <NavLink href="Account/Register" class="btn btn-primary"> *@
+                    @*     Register *@
+                    @* </NavLink> *@
 
                     <NavLink href="Account/Login" class="btn btn-primary" style="margin-left: 3px">
                         Login
@@ -76,6 +80,9 @@
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
 
+    private Category[] _categories = [];
+    private const int MaxShownCategories = 5;
+
 
     private string? currentUrl;
 
@@ -83,6 +90,20 @@
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var categories = await CategoryService.GetCategoriesAsync();
+
+        // Only show the first 5 featured categories - these will be on the navbar AND the dropdown
+        _categories = categories.Where(c => c.Featured).Take(MaxShownCategories).ToArray();
+
+        if(_categories.Length < MaxShownCategories)
+        {
+            _categories = [.. _categories, .. categories.Where(c => !c.Featured).Take(MaxShownCategories - _categories.Length)];
+        }
+
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
