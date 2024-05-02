@@ -1,0 +1,154 @@
+﻿@page "/admin/manage-categories"
+@* @using Microsoft.AspNetCore.Components.QuickGrid *@
+@using System.Diagnostics
+@using OddsNBits.Data.Entities
+
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ICategoryService CategoryService
+
+
+<DashboardHeader Title="Manage Categories">
+    <ActionButtons>
+        <HxButton Color="ThemeColor.Primary" CssClass="btn-sm" OnClick="() => _category = new Data.Entities.Category()"><HxIcon Icon="BootstrapIcon.PlusCircle" /> New Category</HxButton>
+    </ActionButtons>
+</DashboardHeader>
+
+@* <QuickGrid Items="@_categories" class="table table-bordered table-striped table-hover"> *@
+@*     <PropertyColumn Property="@(c=> c.Id)" /> *@
+@*     <PropertyColumn Property="@(c=> c.Name)" /> *@
+@*     <PropertyColumn Property="@(c=> c.Slug)" /> *@
+@*     <PropertyColumn Property="@(c=> c.Featured)" Title="Is Featured?"/> *@
+@*     <TemplateColumn Title="Is Featured?"> *@
+@*         @if(context.Featured) *@
+@*         { *@
+@*             <label class="text-success"> *@
+@*                 <input type="checkbox" checked="checked" @onchange="() => HandleOnFeaturedChange(context)"/> Yes *@
+@*             </label> *@
+@*         }else *@
+@*         { *@
+@*             <label class="text-danger"> *@
+@*                 <input type="checkbox" @onchange="() => HandleOnFeaturedChange(context)" /> No *@
+@*             </label> *@
+@*         } *@
+@*     </TemplateColumn> *@
+@* </QuickGrid> *@
+
+
+@if (_category is not null)
+{
+    <div class="row">
+        <div class="col-sm-6"></div>
+        <div class="col-sm-6">
+            @* OnValidSubmit not working for new categories for some reason *@
+            <EditForm Model="_category" OnSubmit="OnSaveAsync">
+                <DataAnnotationsValidator/>
+                <div class="shadow p-4" style="display: grid; grid-template-columns: auto 150px; grid-column-gap: 15px">
+                    <div>
+                        <label class="form-label">Name</label>
+                        <InputText @bind-Value="_category.Name" class="form-control form-control-sm" placeholder="Category Name"/>
+                        <ValidationMessage For="() => _category.Name"/>
+
+                        <label class="form-label mt-2">
+                            <InputCheckbox @bind-Value="_category.Featured"/>
+                            Feature?
+                        </label>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <HxSubmit Color="ThemeColor.Success" CssClass="btn-sm mb-2">Save</HxSubmit>
+                        <HxSubmit Color="ThemeColor.Danger" CssClass="btn-sm" OnClick="() => _category = null">Cancel</HxSubmit>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+
+
+<HxGrid @ref="_gridComponent" TItem="Category" DataProvider="GetGridData" PageSize="10" Responsive="true">
+    <Columns>
+        <HxGridColumn HeaderText="ID" ItemTextSelector="c => c.Id.ToString()" />
+        <HxGridColumn HeaderText="Name" ItemTextSelector="c => c.Name" />
+        <HxGridColumn HeaderText="Slug" ItemTextSelector="c => c.Slug" />
+        <HxGridColumn HeaderText="Is Featured?">
+            <ItemTemplate>
+                @if (context.Featured)
+                {
+                    <label class="text-success">
+                        <input type="checkbox" checked="checked" @onchange="() => HandleOnFeaturedChange(context)" /> Yes
+                    </label>
+                }
+                else
+                {
+                    <label class="text-danger">
+                        <input type="checkbox" @onchange="() => HandleOnFeaturedChange(context)" /> No
+                    </label>
+                }
+            </ItemTemplate>
+        </HxGridColumn>
+        <HxGridColumn>
+            <ItemTemplate>
+                <HxButton CssClass="btn-sm" OnClick="() => OnEdit(context)">
+                    <HxIcon Icon="BootstrapIcon.Pen" /> Edit
+                </HxButton>
+            </ItemTemplate>
+        </HxGridColumn>
+    </Columns>
+</HxGrid>
+
+@if (_isLoading)
+{
+    <Loader Text="@_loadingText"/>
+}
+
+@code {
+    private Category? _category;
+    private bool _isLoading;
+    private string? _loadingText;
+
+    private HxGrid<Category> _gridComponent;
+
+    private async Task<GridDataProviderResult<Category>> GetGridData(GridDataProviderRequest<Category> request)
+    {
+        var query = (await CategoryService.GetCategoriesAsync()).AsQueryable();
+
+        return new GridDataProviderResult<Category>()
+            {
+                Data = query.ApplyGridDataProviderRequest(request).ToList(), // use ToListAsync(request.CancellationToken) for EF core async data loading
+                TotalCount = query.Count() // use CountAsync(request.CancellationToken) for EF core async data loading
+            };
+    }
+
+    private async Task HandleOnFeaturedChange(Category category)
+    {
+        _loadingText = "Saving changes...";
+        _isLoading = true;
+        category.Featured = !category.Featured;
+        await CategoryService.SaveCategoryAsync(category);
+        _isLoading = false;
+    }
+
+    private void OnEdit(Category category) => _category = category.Clone();
+
+    private async Task OnSaveAsync()
+    {
+        if (_category is not null)
+        {
+            if(string.IsNullOrWhiteSpace(_category.Name))
+            {
+                _category = null;
+                return;
+            }
+            _loadingText = "Saving changes...";
+            _isLoading = true;
+            await CategoryService.SaveCategoryAsync(_category);
+            _category = null;
+
+            await _gridComponent.RefreshDataAsync();
+            _isLoading = false;
+        }
+    }
+
+}

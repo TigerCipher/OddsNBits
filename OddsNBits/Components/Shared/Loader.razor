@@ -1,0 +1,32 @@
+﻿
+<div class="overlay fullscreen-fixed"></div>
+<div class="loader-wrapper fullscreen-fixed d-flex justify-content-center align-items-center">
+    <label class="mr-4 font-weight-bold" style="color: white">@Text</label>
+    <HxSpinner Color="ThemeColor.Warning" />
+</div>
+
+<style type="text/css">
+    .fullscreen-fixed {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+    }
+
+    .overlay {
+        background-color: black;
+        -ms-opacity: 0.75;
+        opacity: 0.75;
+        z-index: 1050;
+    }
+
+    .loader-wrapper {
+        z-index: 1050;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Text { get; set; } = "Loading...";
+}

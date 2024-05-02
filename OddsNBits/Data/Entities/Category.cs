@@ -11,5 +11,7 @@ namespace OddsNBits.Data.Entities
         [Required, MaxLength(75)]
         public string Slug { get; set; }
         public bool Featured { get; set; }
+
+        public Category Clone() => (MemberwiseClone() as Category)!;
     }
 }
