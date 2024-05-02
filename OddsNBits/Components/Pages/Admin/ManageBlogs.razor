@@ -1,0 +1,109 @@
+﻿@page "/admin/manage-posts"
+@using OddsNBits.Data.Entities
+
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject IPostAdminService PostService
+@inject IHxMessageBoxService MessageBox
+@inject IHxMessengerService Messenger
+@inject NavigationManager NavigationManager
+
+<DashboardHeader Title="Manage Posts">
+    <ActionButtons>
+        <NavLink Href="/author/new-post" class="btn btn-sm btn-primary"><HxIcon Icon="BootstrapIcon.PlusCircle" /> New Post</NavLink>
+    </ActionButtons>
+</DashboardHeader>
+
+
+<HxGrid @ref="_gridComponent" TItem="BlogPost" DataProvider="GetGridData" PageSize="_pageSize" Responsive="true">
+    <Columns>
+        <HxGridColumn HeaderText="ID" ItemTextSelector="c => c.Id.ToString()" />
+        <HxGridColumn HeaderText="Title" ItemTextSelector="c => c.Title" />
+        <HxGridColumn HeaderText="Slug" ItemTextSelector="c => c.Slug" />
+        <HxGridColumn HeaderText="Is Featured?">
+            <ItemTemplate>
+                @if (context.IsFeatured)
+                {
+                    <label class="text-success">
+                        <input type="checkbox" checked="checked" /> Yes
+                    </label>
+                }
+                else
+                {
+                    <label class="text-danger">
+                        <input type="checkbox" /> No
+                    </label>
+                }
+            </ItemTemplate>
+        </HxGridColumn>
+        <HxGridColumn>
+            <ItemTemplate>
+                <HxButton CssClass="btn-sm mr-2" OnClick="() => OnEdit(context)">
+                    <HxIcon Icon="BootstrapIcon.Pen" /> Edit
+                </HxButton>
+                <HxButton CssClass="btn-sm" OnClick="() => OnDelete(context)">
+                    <HxIcon Icon="BootstrapIcon.ExclamationTriangle" CssClass="text-danger" /> Delete
+                </HxButton>
+            </ItemTemplate>
+        </HxGridColumn>
+    </Columns>
+    <PaginationTemplate Context="pagination">
+        @{
+            int totalPages = (pagination.TotalCount + pagination.PageSize - 1) / pagination.PageSize;
+            int firstItemPosition = pagination.CurrentUserState.PageIndex * pagination.PageSize + 1;
+            int lastItemPosition = Math.Min(firstItemPosition + pagination.PageSize - 1, pagination.TotalCount);
+        }
+        <div class="row">
+            <div class="col d-flex gap-2 align-items-center">
+                Rows per page: <HxSelect @bind-Value="@_pageSize" Data="_pageSizes" Nullable="false" AutoSort="false" InputSize="InputSize.Small" />
+            </div>
+            <div class="col d-flex justify-content-center align-items-center">
+                Showing @firstItemPosition to @lastItemPosition of @pagination.TotalCount entries
+            </div>
+            <div class="col d-flex align-items-center justify-content-end">
+                <HxButton Icon="BootstrapIcon.ChevronBarLeft" Enabled="pagination.CurrentUserState.PageIndex > 0" OnClick="() => pagination.ChangeCurrentPageIndexAsync(0)" Color="ThemeColor.Link" />
+                <HxButton Icon="BootstrapIcon.ChevronLeft" Enabled="pagination.CurrentUserState.PageIndex > 0" OnClick="() => pagination.ChangeCurrentPageIndexAsync(pagination.CurrentUserState.PageIndex - 1)" Color="ThemeColor.Link" />
+                <HxButton Icon="BootstrapIcon.ChevronRight" Enabled="pagination.CurrentUserState.PageIndex + 1 < totalPages" OnClick="() => pagination.ChangeCurrentPageIndexAsync(pagination.CurrentUserState.PageIndex + 1)" Color="ThemeColor.Link" />
+                <HxButton Icon="BootstrapIcon.ChevronBarRight" Enabled="pagination.CurrentUserState.PageIndex + 1 < totalPages" OnClick="() => pagination.ChangeCurrentPageIndexAsync(totalPages - 1)" Color="ThemeColor.Link" />
+            </div>
+        </div>
+    </PaginationTemplate>
+</HxGrid>
+
+@if (_isLoading)
+{
+    <Loader Text="@_loadingText" />
+}
+
+@code {
+    private HxGrid<BlogPost> _gridComponent;
+
+    private bool _isLoading;
+    private string? _loadingText;
+
+    private int _pageSize = 3;
+    private readonly List<int> _pageSizes = [3, 5, 10, 20, 30];
+
+    private async Task<GridDataProviderResult<BlogPost>> GetGridData(GridDataProviderRequest<BlogPost> request)
+    {
+        // var query = (await CategoryService.GetCategoriesAsync()).AsQueryable();
+
+        return new GridDataProviderResult<BlogPost>()
+            {
+                Data = (await PostService.GetAllAsync(request.StartIndex, request.Count!.Value)).Records,
+                TotalCount = request.Count!.Value
+            };
+    }
+
+    private Task OnEdit(BlogPost post)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task OnDelete(BlogPost post)
+    {
+        throw new NotImplementedException();
+    }
+
+}
