@@ -90,8 +90,11 @@
         </HxGridColumn>
         <HxGridColumn>
             <ItemTemplate>
-                <HxButton CssClass="btn-sm" OnClick="() => OnEdit(context)">
+                <HxButton CssClass="btn-sm mr-2" OnClick="() => OnEdit(context)">
                     <HxIcon Icon="BootstrapIcon.Pen" /> Edit
+                </HxButton>
+                <HxButton CssClass="btn-sm" OnClick="() => OnDelete(context)">
+                    <HxIcon Icon="BootstrapIcon.ExclamationTriangle" CssClass="text-danger" /> Delete
                 </HxButton>
             </ItemTemplate>
         </HxGridColumn>
@@ -131,6 +134,13 @@
     }
 
     private void OnEdit(Category category) => _category = category.Clone();
+
+    private async Task OnDelete(Category category)
+    {
+        // TODO CONFIRMATION WINDOW!
+        await CategoryService.DeleteCategoryAsync(category);
+        await _gridComponent.RefreshDataAsync();
+    }
 
     private async Task OnSaveAsync()
     {

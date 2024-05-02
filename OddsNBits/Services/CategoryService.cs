@@ -29,6 +29,7 @@ public interface ICategoryService
     Task<Category[]> GetCategoriesAsync();
     Task<Category> SaveCategoryAsync(Category category);
     Task<Category?> GetBySlugAsync(string slug);
+    Task DeleteCategoryAsync(Category category);
 }
 
 public class CategoryService(IDbContextFactory<ApplicationDbContext> contextFactory) : ICategoryService
@@ -79,6 +80,23 @@ public class CategoryService(IDbContextFactory<ApplicationDbContext> contextFact
 
             await context.SaveChangesAsync();
             return category;
+        });
+    }
+
+    public async Task DeleteCategoryAsync(Category category)
+    {
+        await ExecuteOnContext<Task?>(async context =>
+        {
+            if(category.Id != 0)
+            {
+                var dbcategory = await context.Categories.FindAsync(category.Id);
+                context.Categories.Remove(dbcategory!);
+                await context.SaveChangesAsync();
+            }else
+            {
+                throw new Exception("Cannot delete a non-existent category");
+            }
+            return null;
         });
     }
 
