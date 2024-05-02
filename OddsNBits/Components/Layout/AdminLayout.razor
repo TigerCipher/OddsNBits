@@ -1,0 +1,29 @@
+﻿@inherits LayoutComponentBase
+
+@layout MainLayout
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 bg-gray py-3 px-3" style="min-height: calc(100vh - 200px)">
+            <AuthorizeView>
+                <Authorized>
+                    <h6 class="text-center font-weight-bold">Welcome @context.User.DisplayName()</h6>
+                </Authorized>
+            </AuthorizeView>
+            <hr/>
+            <div class="list-group">
+                <HxNavLink Href="admin/manage-categories" CssClass="list-group-item list-group-item-gray mb-4">Manage Categories</HxNavLink>
+                <HxNavLink Href="admin/manage-posts" CssClass="list-group-item list-group-item-gray mb-4">Manage Posts</HxNavLink>
+                <HxNavLink Href="admin/manage-users" CssClass="list-group-item list-group-item-gray">Manage Users</HxNavLink>
+            </div>
+        </div>
+        <div class="col-md-10">
+            @Body
+        </div>
+    </div>
+</div>
+
+@code {
+    
+}

@@ -20,4 +20,12 @@
     <ProjectReference Include="..\SSRJSLib\SSRJSLib.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Components\Layout\AdminLayout.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Components\Layout\AdminLayout.razor" />
+  </ItemGroup>
+
 </Project>

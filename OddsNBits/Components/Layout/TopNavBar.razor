@@ -36,8 +36,11 @@
         <div class="d-flex px-3">
             <AuthorizeView>
                 <Authorized>
+                    <HxNavLink Href="admin/dashboard">
+                        <HxIcon Icon="@BootstrapIcon.Briefcase"/> Dashboard
+                    </HxNavLink>
                     <HxNavLink Href="Account/Manage">
-                        <HxIcon Icon="@BootstrapIcon.Person" /> @context.User.DisplayName()
+                        <HxIcon Icon="@BootstrapIcon.Person"/> @context.User.DisplayName()
                     </HxNavLink>
                     @* <NavLink Href="Account/Manage"> *@
                     @*     <HxIcon Icon="@BootstrapIcon.Person"/> @context.User.DisplayName() *@
