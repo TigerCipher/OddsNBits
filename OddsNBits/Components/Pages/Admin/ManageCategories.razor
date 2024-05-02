@@ -7,7 +7,8 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ICategoryService CategoryService
-
+@inject IHxMessageBoxService MessageBox
+@inject IHxMessengerService Messenger
 
 <DashboardHeader Title="Manage Categories">
     <ActionButtons>
@@ -43,15 +44,15 @@
         <div class="col-sm-6">
             @* OnValidSubmit not working for new categories for some reason *@
             <EditForm Model="_category" OnSubmit="OnSaveAsync">
-                <DataAnnotationsValidator/>
+                <DataAnnotationsValidator />
                 <div class="shadow p-4" style="display: grid; grid-template-columns: auto 150px; grid-column-gap: 15px">
                     <div>
                         <label class="form-label">Name</label>
-                        <InputText @bind-Value="_category.Name" class="form-control form-control-sm" placeholder="Category Name"/>
-                        <ValidationMessage For="() => _category.Name"/>
+                        <InputText @bind-Value="_category.Name" class="form-control form-control-sm" placeholder="Category Name" />
+                        <ValidationMessage For="() => _category.Name" />
 
                         <label class="form-label mt-2">
-                            <InputCheckbox @bind-Value="_category.Featured"/>
+                            <InputCheckbox @bind-Value="_category.Featured" />
                             Feature?
                         </label>
                     </div>
@@ -103,10 +104,12 @@
 
 @if (_isLoading)
 {
-    <Loader Text="@_loadingText"/>
+    <Loader Text="@_loadingText" />
 }
 
 @code {
+
+
     private Category? _category;
     private bool _isLoading;
     private string? _loadingText;
@@ -137,27 +140,35 @@
 
     private async Task OnDelete(Category category)
     {
-        // TODO CONFIRMATION WINDOW!
-        await CategoryService.DeleteCategoryAsync(category);
-        await _gridComponent.RefreshDataAsync();
+        if (await MessageBox.ConfirmAsync($"Delete '{category.Name}' Category?",
+                "There is no going back once this is deleted. All posts under this category will be archived in the database."))
+        {
+            var title = category.Name;
+            await CategoryService.DeleteCategoryAsync(category);
+            await _gridComponent.RefreshDataAsync();
+            Messenger.AddInformation(title: "Success", message: $"Category '{title}' has been deleted");
+        }
     }
 
     private async Task OnSaveAsync()
     {
         if (_category is not null)
         {
-            if(string.IsNullOrWhiteSpace(_category.Name))
+            if (string.IsNullOrWhiteSpace(_category.Name))
             {
+                Messenger.AddError(title: "Invalid Submission", message: "A category requires a name but none was given!");
                 _category = null;
                 return;
             }
             _loadingText = "Saving changes...";
             _isLoading = true;
             await CategoryService.SaveCategoryAsync(_category);
+            var title = _category.Name;
             _category = null;
 
             await _gridComponent.RefreshDataAsync();
             _isLoading = false;
+            Messenger.AddInformation(title: "Success", message: $"Category '{title}' has been saved");
         }
     }
 

@@ -37,6 +37,8 @@ builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
 builder.Services.AddHxServices();
+builder.Services.AddHxMessageBoxHost();
+builder.Services.AddHxMessenger();
 builder.Services.AddSocialMediaSharing();
 
 builder.Services.AddAuthentication(options =>
