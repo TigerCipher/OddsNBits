@@ -65,6 +65,8 @@ builder.Services.AddTransient<ISeederService, Seeder>();
 builder.Services.AddTransient<ICategoryService, CategoryService>();
 builder.Services.AddTransient<IPostAdminService, PostAdminService>();
 
+builder.Services.AddControllers();
+
 var app = builder.Build();
 
 await SeedData(app.Services);
@@ -84,6 +86,8 @@ else
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+
+
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
@@ -91,6 +95,13 @@ app.MapRazorComponents<App>()
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
+
+
+// app.UseEndpoints(ep =>
+// {
+//     ep.MapControllers();
+// });
+app.MapControllers();
 
 app.Run();
 

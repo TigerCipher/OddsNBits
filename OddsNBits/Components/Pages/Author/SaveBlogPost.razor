@@ -1,0 +1,125 @@
+﻿@page "/author/new-post"
+@using System.Diagnostics
+@using Microsoft.AspNetCore.Authorization
+@using OddsNBits.Data.Entities
+@using TinyMCE.Blazor
+
+@attribute [Authorize(Roles = "Admin,Author")]
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject IPostAdminService PostService
+@inject ICategoryService CategoryService
+@inject IHxMessageBoxService MessageBox
+@inject IHxMessengerService Messenger
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Post | Odds &amp; Bits</PageTitle>
+
+@* <div class="container"> *@
+<h1>Create Post</h1>
+<EditForm Model="_model" class="p-6">
+    <DataAnnotationsValidator />
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="mb-3">
+                <HxInputText Label="Title" @bind-Value="_model.Title" Placeholder="Title" />
+                <ValidationMessage For="() => _model.Title" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <HxSelect TItem="Category" Label="Category" TValue="int?" @bind-Value="_categoryId"
+                          Data="_categories" TextSelector="c => c.Name" ValueSelector="c => c.Id"
+                          Nullable="true" NullText="-select category-" NullDataText="Loading categories..." />
+                <ValidationMessage For="() => _model.CategoryId" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <HxInputText Label="Introduction" @bind-Value="_model.Introduction" Placeholder="Short introduction" />
+                <ValidationMessage For="() => _model.Introduction" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <HxInputFile @ref="_inputFile" Label="Image" Accept="image/*" MaxFileSize="500000" UploadUrl="/file-upload-streamed/" OnFileUploaded="HandleFileUploaded" />
+                <HxButton Text="Upload" Color="ThemeColor.Primary" OnClick="HandleUploadClick" />
+                OriginalFileName: @_fileUploaded?.OriginalFileName
+                <br />
+                ContentType: @_fileUploaded?.ContentType
+                <br />
+                Size: @_fileUploaded?.Size.ToString("n0") bytes
+                <br />
+                LastModified: @_fileUploaded?.LastModified
+                <br />
+                ResponseStatus: @_fileUploaded?.ResponseStatus
+                <br />
+                ResponseText: @_fileUploaded?.ResponseText
+                <br />
+            </div>
+            <div class="mb-3">
+                <HxCheckbox Text="Featured?" @bind-Value="_model.IsFeatured" />
+            </div>
+            <div class="mb-3">
+                <HxCheckbox Text="Published?" @bind-Value="_model.IsPublished" />
+            </div>
+            <div class="mb-3">
+                <HxSubmit Color="ThemeColor.Success" Text="Save" />
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <Editor ScriptSrc="js/tinymce/tinymce.min.js" @bind-Value="_htmlContent" Conf="_editorConf" Field="() => _htmlContent" />
+            <ValidationMessage For="() => _model.Content" />
+        </div>
+
+    </div>
+</EditForm>
+@* </div> *@
+
+@if (_isLoading)
+{
+    <Loader Text="@_loadingText" />
+}
+
+@code {
+    private string _htmlContent = "<p>Write to your heart\'s content!</p>";
+    private BlogPost _model = new();
+    private bool _isLoading;
+    private string? _loadingText;
+    private IEnumerable<Category> _categories;
+    private int? _categoryId;
+
+    private HxInputFile _inputFile;
+    private FileUploadedEventArgs _fileUploaded;
+
+    private readonly Dictionary<string, object> _editorConf = new()
+    {
+        { "menubar", true },
+        { "plugins", "preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion" },
+        { "toolbar", "undo redo | accordion accordionremove | blocks fontfamily fontsize | bold italic underline strikethrough | align numlist bullist | link image | table media | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | code fullscreen preview | save print | pagebreak anchor codesample | ltr rtl" },
+        { "codesample_global_prismjs", true},
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await CategoryService.GetCategoriesAsync();
+        foreach (var c in _categories)
+        {
+            Debug.WriteLine($"Cat ID: {c.Id}");
+        }
+    }
+
+    private void OnSubmit()
+    {
+        _model.CategoryId = _categoryId!.Value;
+    }
+
+    private async Task HandleUploadClick()
+    {
+        string? accessToken = null;
+        Debug.WriteLine("[WARNING] Uploading image!");
+        await _inputFile.StartUploadAsync(accessToken);
+    }
+
+    private Task HandleFileUploaded(FileUploadedEventArgs file)
+    {
+        _fileUploaded = file;
+        return Task.CompletedTask;
+    }
+
+}

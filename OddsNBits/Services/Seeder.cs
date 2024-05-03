@@ -85,6 +85,8 @@ namespace OddsNBits.Services
                     throw new Exception(err);
                 }
             }
+
+            // TODO Seed some category and blog post data for testing purposes
         }
     }
 }

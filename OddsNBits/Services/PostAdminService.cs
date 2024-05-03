@@ -30,6 +30,7 @@ public interface IPostAdminService
     Task<PagedResult<BlogPost>> GetAllAsync(int startIndex, int pageSize);
     Task<BlogPost?> GetByIdAsync(int id);
     Task<BlogPost> SaveAsync(BlogPost post, string userId);
+    Task<int> GetTotalCount();
 }
 
 public class PostAdminService : IPostAdminService
@@ -115,7 +116,7 @@ public class PostAdminService : IPostAdminService
                     }
                     dbpost.IsPublished = post.IsPublished;
 
-                    if(!post.IsPublished)
+                    if (!post.IsPublished)
                     {
                         dbpost.PublishedOn = null;
                     }
@@ -126,6 +127,11 @@ public class PostAdminService : IPostAdminService
             await ctx.SaveChangesAsync();
             return post;
         });
+    }
+
+    public async Task<int> GetTotalCount()
+    {
+        return await ExecuteOnContext(async context => await context.BlogPosts.CountAsync());
     }
 
     private async Task<string> GenerateSlug(BlogPost post)
