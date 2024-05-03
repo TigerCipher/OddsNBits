@@ -13,7 +13,7 @@
 
 <DashboardHeader Title="Manage Categories">
     <ActionButtons>
-        <HxButton Color="ThemeColor.Primary" CssClass="btn-sm" OnClick="() => _category = new Data.Entities.Category()"><HxIcon Icon="BootstrapIcon.PlusCircle" /> New Category</HxButton>
+        <HxButton Color="ThemeColor.Primary" CssClass="btn-sm" OnClick="() => _category = new Category()"><HxIcon Icon="BootstrapIcon.PlusCircle" /> New Category</HxButton>
     </ActionButtons>
 </DashboardHeader>
 
@@ -90,16 +90,23 @@
                 }
             </ItemTemplate>
         </HxGridColumn>
-        <HxGridColumn>
-            <ItemTemplate>
-                <HxButton CssClass="btn-sm mr-2" OnClick="() => OnEdit(context)">
-                    <HxIcon Icon="BootstrapIcon.Pen" /> Edit
-                </HxButton>
-                <HxButton CssClass="btn-sm" OnClick="() => OnDelete(context)">
-                    <HxIcon Icon="BootstrapIcon.ExclamationTriangle" CssClass="text-danger" /> Delete
-                </HxButton>
-            </ItemTemplate>
-        </HxGridColumn>
+        <HxContextMenuGridColumn Context="category">
+            <HxContextMenu>
+                <HxContextMenuItem Text="Edit" Icon="BootstrapIcon.Pen" OnClick="() => OnEdit(category)"/>
+                <HxContextMenuItem Text="Delete" Icon="BootstrapIcon.Trash" IconCssClass="text-danger"
+                                   OnClick="() => OnDelete(category)" ConfirmationQuestion="@($"Are you sure you want to delete the category '{category.Name}'? This is irreversible.")"/>
+            </HxContextMenu>
+        </HxContextMenuGridColumn>
+        @* <HxGridColumn> *@
+        @*     <ItemTemplate> *@
+        @*         <HxButton CssClass="btn-sm mr-2" OnClick="() => OnEdit(context)"> *@
+        @*             <HxIcon Icon="BootstrapIcon.Pen"/> Edit *@
+        @*         </HxButton> *@
+        @*         <HxButton CssClass="btn-sm" OnClick="() => OnDelete(context)"> *@
+        @*             <HxIcon Icon="BootstrapIcon.Trash" CssClass="text-danger"/> Delete *@
+        @*         </HxButton> *@
+        @*     </ItemTemplate> *@
+        @* </HxGridColumn> *@
     </Columns>
 </HxGrid>
 
@@ -142,14 +149,18 @@
 
     private async Task OnDelete(Category category)
     {
-        if (await MessageBox.ConfirmAsync($"Delete '{category.Name}' Category?",
-                "There is no going back once this is deleted. All posts under this category will be archived in the database."))
-        {
-            var title = category.Name;
-            await CategoryService.DeleteCategoryAsync(category);
-            await _gridComponent.RefreshDataAsync();
-            Messenger.AddInformation(title: "Success", message: $"Category '{title}' has been deleted");
-        }
+        var title = category.Name;
+        await CategoryService.DeleteCategoryAsync(category);
+        await _gridComponent.RefreshDataAsync();
+        Messenger.AddInformation(title: "Success", message: $"Category '{title}' has been deleted");
+        // if (await MessageBox.ConfirmAsync($"Delete '{category.Name}' Category?",
+        //         "There is no going back once this is deleted. All posts under this category will be archived in the database."))
+        // {
+        //     var title = category.Name;
+        //     await CategoryService.DeleteCategoryAsync(category);
+        //     await _gridComponent.RefreshDataAsync();
+        //     Messenger.AddInformation(title: "Success", message: $"Category '{title}' has been deleted");
+        // }
     }
 
     private async Task OnSaveAsync()
