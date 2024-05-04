@@ -9,19 +9,19 @@ namespace OddsNBits.Data.Entities
         [Required, MaxLength(120)]
         public string Title { get; set; }
 
-        [Required, MaxLength(150)]
+        [MaxLength(150)]
         public string Slug { get; set; }
 
-        [Required, MaxLength(120)]
+        [MaxLength(120)]
         public string Image { get; set; }
 
         [Required, MaxLength(500)]
         public string Introduction { get; set; }
 
-        [Required]
         public string Content { get; set; }
 
-        public int CategoryId { get; set; }
+        // [Range(1, int.MaxValue, ErrorMessage = "Please select a valid category")]
+        public short CategoryId { get; set; }
         public string UserId { get; set; }
 
         public bool IsPublished { get; set; }

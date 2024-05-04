@@ -261,3 +261,4 @@ __pycache__/
 *.pyc
 
 OddsNBits/appsettings.json
+OddsNBits/wwwroot/img/posts

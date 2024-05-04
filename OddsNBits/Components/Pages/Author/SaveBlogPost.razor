@@ -10,31 +10,42 @@
 
 @inject IPostAdminService PostService
 @inject ICategoryService CategoryService
-@inject IHxMessageBoxService MessageBox
 @inject IHxMessengerService Messenger
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthProvider
+@inject IWebHostEnvironment WebHost
 
 <PageTitle>Create Post | Odds &amp; Bits</PageTitle>
 
 @* <div class="container"> *@
-<h1>Create Post</h1>
-<EditForm Model="_model" class="p-6">
+<h1 class="p-6 ml-6 mr-6">Create Post</h1>
+<EditForm Model="_model" class="pl-6 ml-6 mr-6" OnValidSubmit="SavePostAsync">
     <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger"/>
     <div class="row">
         <div class="col-sm-6">
             <div class="mb-3">
                 <HxInputText Label="Title" @bind-Value="_model.Title" Placeholder="Title" />
-                <ValidationMessage For="() => _model.Title" class="text-danger" />
+                @* <ValidationMessage For="() => _model.Title" class="text-danger" /> *@
             </div>
             <div class="mb-3">
-                <HxSelect TItem="Category" Label="Category" TValue="int?" @bind-Value="_categoryId"
+                <HxSelect TItem="Category" Label="Category" TValue="short?" @bind-Value="_categoryId"
                           Data="_categories" TextSelector="c => c.Name" ValueSelector="c => c.Id"
                           Nullable="true" NullText="-select category-" NullDataText="Loading categories..." />
-                <ValidationMessage For="() => _model.CategoryId" class="text-danger" />
             </div>
             <div class="mb-3">
                 <HxInputText Label="Introduction" @bind-Value="_model.Introduction" Placeholder="Short introduction" />
-                <ValidationMessage For="() => _model.Introduction" class="text-danger" />
+                @* <ValidationMessage For="() => _model.Introduction" class="text-danger" /> *@
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_imageUrl))
+            {
+                <div class="mb-3">
+                    <img src="@_imageUrl" style="height: 200px" />
+                </div>
+            }
+            <div class="mb-3">
+                <label class="form-label d-block">Upload Image</label>
+                <InputFile OnChange="HandleFileUploadAsync" />
             </div>
             <div class="mb-3">
                 <HxInputFile @ref="_inputFile" Label="Image" Accept="image/*" MaxFileSize="500000" UploadUrl="/file-upload-streamed/" OnFileUploaded="HandleFileUploaded" />
@@ -62,9 +73,11 @@
                 <HxSubmit Color="ThemeColor.Success" Text="Save" />
             </div>
         </div>
-        <div class="col-sm-6">
-            <Editor ScriptSrc="js/tinymce/tinymce.min.js" @bind-Value="_htmlContent" Conf="_editorConf" Field="() => _htmlContent" />
-            <ValidationMessage For="() => _model.Content" />
+        <div class="col-sm-6 d-flex">
+            <div class="mb-3 flex-grow-1">
+                <Editor ScriptSrc="js/tinymce/tinymce.min.js" @bind-Value="_htmlContent" Conf="_editorConf" Field="() => _htmlContent" />
+            </div>
+
         </div>
 
     </div>
@@ -77,15 +90,18 @@
 }
 
 @code {
-    private string _htmlContent = "<p>Write to your heart\'s content!</p>";
+    private string _htmlContent = "";
     private BlogPost _model = new();
     private bool _isLoading;
     private string? _loadingText;
     private IEnumerable<Category> _categories;
-    private int? _categoryId;
+    private short? _categoryId;
 
     private HxInputFile _inputFile;
     private FileUploadedEventArgs _fileUploaded;
+
+    private string? _imageUrl;
+    private IBrowserFile? _imageFile;
 
     private readonly Dictionary<string, object> _editorConf = new()
     {
@@ -104,11 +120,6 @@
         }
     }
 
-    private void OnSubmit()
-    {
-        _model.CategoryId = _categoryId!.Value;
-    }
-
     private async Task HandleUploadClick()
     {
         string? accessToken = null;
@@ -122,4 +133,101 @@
         return Task.CompletedTask;
     }
 
+    private async Task HandleFileUploadAsync(InputFileChangeEventArgs e)
+    {
+        await PreviewImageAsync(e.File);
+        _imageFile = e.File;
+    }
+
+    private async Task PreviewImageAsync(IBrowserFile file)
+    {
+        using var imgStream = file.OpenReadStream();
+        using MemoryStream memStream = new();
+        await imgStream.CopyToAsync(memStream);
+        Debug.WriteLine($"Image type: {file.ContentType}");
+        // data:image/type;base64,fijgofd_content_jnfdgjdfg
+        _imageUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(memStream.ToArray())}";
+    }
+
+
+    private async Task SavePostAsync()
+    {
+        try
+        {
+            var content = _htmlContent;
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                Messenger.AddError(title: "Missing content", message: "A post must have content written for it before it can be saved!");
+                return;
+            }
+
+            if (_categoryId is null or 0)
+            {
+                Messenger.AddError("You must select a category");
+                return;
+            }
+            _loadingText = "Saving post...";
+            _isLoading = true;
+            _model.CategoryId = _categoryId!.Value;
+
+            _model.Content = content;
+
+            // Upload the image file
+            if (_imageFile is not null)
+            {
+                var url = await SaveFileAsync(_imageFile);
+                if (string.IsNullOrWhiteSpace(url))
+                {
+                    Messenger.AddError("Image url was null");
+                    return;
+                }
+                _model.Image = url;
+            }
+            else
+            {
+                Messenger.AddError("Image file could not be loaded");
+            }
+
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            var userid = authState.User.UserId();
+
+            await PostService.SaveAsync(_model, userid);
+
+            Messenger.AddInformation($"Post '{_model.Title}' saved successfully");
+            _isLoading = false;
+            _imageFile = null;
+        }catch(Exception ex)
+        {
+            // TODO: Delete uploaded image file
+            Messenger.AddError("Unexpected Error", ex.Message);
+        }
+    }
+
+    private async Task<string?> SaveFileAsync(IBrowserFile file)
+    {
+        var trustedName = Path.GetRandomFileName();
+        var ext = Path.GetExtension(file.Name);
+        // wwwroot\img\posts
+        var destination = Path.Combine(WebHost.WebRootPath, "img", "posts");
+        Directory.CreateDirectory(destination);
+
+        var filename = Path.Combine("img", "posts", trustedName + ext);
+
+        var fullpath = Path.Combine(WebHost.WebRootPath, filename);
+
+        await using FileStream fs = new(fullpath, FileMode.Create);
+        try
+        {
+            await file.OpenReadStream().CopyToAsync(fs);
+
+            return filename.Replace('\\', '/');
+        }
+        catch (Exception ex)
+        {
+            Messenger.AddError(title: "Failed to save image file!", message: ex.Message);
+            fs.Close();
+
+            return null;
+        }
+    }
 }
