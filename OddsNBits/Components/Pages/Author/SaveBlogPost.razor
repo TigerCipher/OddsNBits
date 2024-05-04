@@ -2,6 +2,7 @@
 @using System.Diagnostics
 @using Microsoft.AspNetCore.Authorization
 @using OddsNBits.Data.Entities
+@using OddsNBits.Models
 @using TinyMCE.Blazor
 
 @attribute [Authorize(Roles = "Admin,Author")]
@@ -17,11 +18,14 @@
 
 <PageTitle>Create Post | Odds &amp; Bits</PageTitle>
 
+<HxMessenger Position="ToastContainerPosition.TopCenter"/>
+<HxMessageBoxHost/>
+
 @* <div class="container"> *@
 <h1 class="p-6 ml-6 mr-6">Create Post</h1>
 <EditForm Model="_model" class="pl-6 ml-6 mr-6" OnValidSubmit="SavePostAsync">
     <DataAnnotationsValidator />
-    <ValidationSummary class="text-danger"/>
+    <ValidationSummary />
     <div class="row">
         <div class="col-sm-6">
             <div class="mb-3">
@@ -29,9 +33,18 @@
                 @* <ValidationMessage For="() => _model.Title" class="text-danger" /> *@
             </div>
             <div class="mb-3">
-                <HxSelect TItem="Category" Label="Category" TValue="short?" @bind-Value="_categoryId"
-                          Data="_categories" TextSelector="c => c.Name" ValueSelector="c => c.Id"
-                          Nullable="true" NullText="-select category-" NullDataText="Loading categories..." />
+                <label class="form-label">Category</label>
+                <InputSelect @bind-Value="_model.CategoryId" class="form-control">
+                    <option value="">-select category-</option>
+                    @foreach(var cat in _categories)
+                    {
+                        <option value="@cat.Id">@cat.Name</option>
+                    }
+                </InputSelect>
+                @* <HxSelect TItem="Category" Label="Category" TValue="short" @bind-Value="_model.CategoryId" *@
+                @*           Data="_categories" TextSelector="c => c.Name" ValueSelector="c => c.Id" *@
+                @*           Nullable="true" NullText="-select category-" NullDataText="Loading categories..."/> *@
+                <ValidationMessage For="() => _model.CategoryId" />
             </div>
             <div class="mb-3">
                 <HxInputText Label="Introduction" @bind-Value="_model.Introduction" Placeholder="Short introduction" />
@@ -48,22 +61,6 @@
                 <InputFile OnChange="HandleFileUploadAsync" />
             </div>
             <div class="mb-3">
-                <HxInputFile @ref="_inputFile" Label="Image" Accept="image/*" MaxFileSize="500000" UploadUrl="/file-upload-streamed/" OnFileUploaded="HandleFileUploaded" />
-                <HxButton Text="Upload" Color="ThemeColor.Primary" OnClick="HandleUploadClick" />
-                OriginalFileName: @_fileUploaded?.OriginalFileName
-                <br />
-                ContentType: @_fileUploaded?.ContentType
-                <br />
-                Size: @_fileUploaded?.Size.ToString("n0") bytes
-                <br />
-                LastModified: @_fileUploaded?.LastModified
-                <br />
-                ResponseStatus: @_fileUploaded?.ResponseStatus
-                <br />
-                ResponseText: @_fileUploaded?.ResponseText
-                <br />
-            </div>
-            <div class="mb-3">
                 <HxCheckbox Text="Featured?" @bind-Value="_model.IsFeatured" />
             </div>
             <div class="mb-3">
@@ -75,7 +72,8 @@
         </div>
         <div class="col-sm-6 d-flex">
             <div class="mb-3 flex-grow-1">
-                <Editor ScriptSrc="js/tinymce/tinymce.min.js" @bind-Value="_htmlContent" Conf="_editorConf" Field="() => _htmlContent" />
+                <Editor ScriptSrc="js/tinymce/tinymce.min.js" @bind-Value="_model.Content" Conf="_editorConf" Field="() => _model.Content" />
+                <ValidationMessage For="() => _model.Content"/>
             </div>
 
         </div>
@@ -90,15 +88,12 @@
 }
 
 @code {
-    private string _htmlContent = "";
-    private BlogPost _model = new();
+    private readonly BlogPostModel _model = new();
     private bool _isLoading;
     private string? _loadingText;
-    private IEnumerable<Category> _categories;
-    private short? _categoryId;
+    // private IEnumerable<Category> _categories;
+    private Category[] _categories = [];
 
-    private HxInputFile _inputFile;
-    private FileUploadedEventArgs _fileUploaded;
 
     private string? _imageUrl;
     private IBrowserFile? _imageFile;
@@ -120,18 +115,6 @@
         }
     }
 
-    private async Task HandleUploadClick()
-    {
-        string? accessToken = null;
-        Debug.WriteLine("[WARNING] Uploading image!");
-        await _inputFile.StartUploadAsync(accessToken);
-    }
-
-    private Task HandleFileUploaded(FileUploadedEventArgs file)
-    {
-        _fileUploaded = file;
-        return Task.CompletedTask;
-    }
 
     private async Task HandleFileUploadAsync(InputFileChangeEventArgs e)
     {
@@ -141,7 +124,7 @@
 
     private async Task PreviewImageAsync(IBrowserFile file)
     {
-        using var imgStream = file.OpenReadStream();
+        await using var imgStream = file.OpenReadStream();
         using MemoryStream memStream = new();
         await imgStream.CopyToAsync(memStream);
         Debug.WriteLine($"Image type: {file.ContentType}");
@@ -152,51 +135,55 @@
 
     private async Task SavePostAsync()
     {
+        if(_model.CategoryId == 0)
+        {
+            Messenger.AddError("Invalid Category", "Please select a category!");
+            return;
+        }
         try
         {
-            var content = _htmlContent;
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                Messenger.AddError(title: "Missing content", message: "A post must have content written for it before it can be saved!");
-                return;
-            }
 
-            if (_categoryId is null or 0)
-            {
-                Messenger.AddError("You must select a category");
-                return;
-            }
             _loadingText = "Saving post...";
             _isLoading = true;
-            _model.CategoryId = _categoryId!.Value;
 
-            _model.Content = content;
 
             // Upload the image file
+            string? url;
             if (_imageFile is not null)
             {
-                var url = await SaveFileAsync(_imageFile);
+                url = await SaveFileAsync(_imageFile);
                 if (string.IsNullOrWhiteSpace(url))
                 {
                     Messenger.AddError("Image url was null");
                     return;
                 }
-                _model.Image = url;
             }
             else
             {
                 Messenger.AddError("Image file could not be loaded");
+                return;
             }
 
             var authState = await AuthProvider.GetAuthenticationStateAsync();
             var userid = authState.User.UserId();
 
-            await PostService.SaveAsync(_model, userid);
+            BlogPost dbpost = new()
+                {
+                    Title = _model.Title,
+                    Introduction = _model.Introduction,
+                    Content = _model.Content,
+                    Image = url,
+                    CategoryId = _model.CategoryId,
+                    IsPublished = _model.IsPublished,
+                    IsFeatured = _model.IsFeatured
+                };
+            await PostService.SaveAsync(dbpost, userid);
 
             Messenger.AddInformation($"Post '{_model.Title}' saved successfully");
             _isLoading = false;
             _imageFile = null;
-        }catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             // TODO: Delete uploaded image file
             Messenger.AddError("Unexpected Error", ex.Message);

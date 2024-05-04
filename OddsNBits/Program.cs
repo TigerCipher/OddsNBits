@@ -65,7 +65,7 @@ builder.Services.AddTransient<ISeederService, Seeder>();
 builder.Services.AddTransient<ICategoryService, CategoryService>();
 builder.Services.AddTransient<IPostAdminService, PostAdminService>();
 
-builder.Services.AddControllers();
+// builder.Services.AddControllers();
 
 var app = builder.Build();
 
@@ -101,7 +101,7 @@ app.MapAdditionalIdentityEndpoints();
 // {
 //     ep.MapControllers();
 // });
-app.MapControllers();
+// app.MapControllers();
 
 app.Run();
 

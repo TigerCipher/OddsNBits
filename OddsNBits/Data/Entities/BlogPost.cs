@@ -1,5 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
+namespace OddsNBits.Models
+{
+}
+
 namespace OddsNBits.Data.Entities
 {
     public class BlogPost

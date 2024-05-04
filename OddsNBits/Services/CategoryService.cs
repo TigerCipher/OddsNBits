@@ -21,6 +21,7 @@ using Microsoft.EntityFrameworkCore;
 using OddsNBits.Data;
 using OddsNBits.Data.Entities;
 using OddsNBits.Helpers;
+using OddsNBits.Models;
 
 namespace OddsNBits.Services;
 
@@ -30,6 +31,8 @@ public interface ICategoryService
     Task<Category> SaveCategoryAsync(Category category);
     Task<Category?> GetBySlugAsync(string slug);
     Task DeleteCategoryAsync(Category category);
+    Category EntityFromModel(CategoryModel model, Category entity);
+    CategoryModel ModelFromEntity(Category category);
 }
 
 public class CategoryService(IDbContextFactory<ApplicationDbContext> contextFactory) : ICategoryService
@@ -87,12 +90,13 @@ public class CategoryService(IDbContextFactory<ApplicationDbContext> contextFact
     {
         await ExecuteOnContext<Task?>(async context =>
         {
-            if(category.Id != 0)
+            if (category.Id != 0)
             {
                 var dbcategory = await context.Categories.FindAsync(category.Id);
                 context.Categories.Remove(dbcategory!);
                 await context.SaveChangesAsync();
-            }else
+            }
+            else
             {
                 throw new Exception("Cannot delete a non-existent category");
             }
@@ -103,4 +107,20 @@ public class CategoryService(IDbContextFactory<ApplicationDbContext> contextFact
     public async Task<Category?> GetBySlugAsync(string slug) => await ExecuteOnContext(async context =>
         await context.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Slug == slug)
     );
+
+    public Category EntityFromModel(CategoryModel model, Category entity)
+    {
+        entity.Name = model.Name;
+        entity.Featured = model.Featured;
+        return entity;
+    }
+
+    public CategoryModel ModelFromEntity(Category category)
+    {
+        return new CategoryModel
+        {
+            Name = category.Name,
+            Featured = category.Featured
+        };
+    }
 }
