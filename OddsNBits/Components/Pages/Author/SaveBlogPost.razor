@@ -135,11 +135,6 @@
 
     private async Task SavePostAsync()
     {
-        if(_model.CategoryId == 0)
-        {
-            Messenger.AddError("Invalid Category", "Please select a category!");
-            return;
-        }
         try
         {
 
@@ -155,12 +150,14 @@
                 if (string.IsNullOrWhiteSpace(url))
                 {
                     Messenger.AddError("Image url was null");
+                    _isLoading = false;
                     return;
                 }
             }
             else
             {
                 Messenger.AddError("Image file could not be loaded");
+                _isLoading = false;
                 return;
             }
 
@@ -187,6 +184,7 @@
         {
             // TODO: Delete uploaded image file
             Messenger.AddError("Unexpected Error", ex.Message);
+            _isLoading = false;
         }
     }
 

@@ -168,6 +168,7 @@
             _isLoading = true;
             if(_entity is not null)
             {
+                _entity = CategoryService.EntityFromModel(_category, _entity);
                 await CategoryService.SaveCategoryAsync(_entity);
             }else
             {
