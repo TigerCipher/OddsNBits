@@ -100,6 +100,10 @@ body {
     border-color: #1861ac;
 }
 
+.grid-max-width {
+    max-width: 200px
+}
+
 /* .oddsnav { */
 /*     min-width: 50vw; */
 /* } */

@@ -87,7 +87,9 @@ public class PostAdminService : IPostAdminService
                 e => e.CreatedOn.ToShortDateString() == filter.CreationDate.StartDate?.ToShortDateString())
             // Filter if both start and end date are given
             .WhereIf(filter.CreationDate.StartDate is not null && filter.CreationDate.EndDate is not null,
-                e=> filter.CreationDate.StartDate <= e.CreatedOn && e.CreatedOn < filter.CreationDate.EndDate!.Value.AddDays(1))
+                e => filter.CreationDate.StartDate <= e.CreatedOn && e.CreatedOn < filter.CreationDate.EndDate!.Value.AddDays(1))
+            .WhereIf(filter.ShowOnlyFeatured, e => e.IsFeatured)
+            .WhereIf(filter.ShowOnlyPublished, e => e.IsPublished)
             .Skip(startIndex)
             .Take(pageSize)
             .ToArray();

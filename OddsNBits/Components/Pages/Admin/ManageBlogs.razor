@@ -23,17 +23,17 @@
     </CommandsTemplate>
     <FilterTemplate Context="filterCtx">
         <HxInputText Label="Title" @bind-Value="filterCtx.Title" />
-        @* <HxCheckbox Text="Published" @bind-Value="filterCtx.IsPublished" /> *@
-        @* <HxCheckbox Text="Featured" @bind-Value="filterCtx.IsFeatured" /> *@
         <HxInputDateRange @bind-Value="filterCtx.CreationDate" Label="Creation Date Range" CalendarIcon="BootstrapIcon.Calendar"/>
+        <HxCheckbox Text="Show only published posts" @bind-Value="filterCtx.ShowOnlyPublished"/>
+        <HxCheckbox Text="Show only featured posts" @bind-Value="filterCtx.ShowOnlyFeatured"/>
     </FilterTemplate>
     <DataTemplate>
         <HxGrid @ref="_gridComponent" TItem="BlogPost" DataProvider="GetGridData" PageSize="_pageSize" Responsive="true" @bind-SelectedDataItem="_currentPost">
             <Columns>
                 <HxGridColumn HeaderText="ID" ItemTextSelector="c => c.Id.ToString()" />
-                <HxGridColumn HeaderText="Title" ItemTextSelector="c => c.Title" />
-                <HxGridColumn HeaderText="Slug" ItemTextSelector="c => c.Slug" />
-                <HxGridColumn HeaderText="Category" ItemTextSelector="c => c.Category.Name" />
+                <HxGridColumn HeaderText="Title" ItemTextSelector="c => c.Title" ItemCssClass="grid-max-width" />
+                <HxGridColumn HeaderText="Slug" ItemTextSelector="c => c.Slug" ItemCssClass="grid-max-width"/>
+                <HxGridColumn HeaderText="Category" ItemTextSelector="c => c.Category.Name" ItemCssClass="grid-max-width" />
                 <HxGridColumn HeaderText="Created On" ItemTextSelector="c => c.CreatedOn.ToShortDateString()" />
                 <HxGridColumn HeaderText="Last Modified" ItemTextSelector="c => c.ModifiedOn?.ToShortDateString() ?? string.Empty" />
                 <HxGridColumn HeaderText="Is Featured?">
@@ -90,10 +90,14 @@
                         Showing @firstItemPosition to @lastItemPosition of @_totalCount entries
                     </div>
                     <div class="col d-flex align-items-center justify-content-end">
-                        <HxButton Icon="BootstrapIcon.ChevronBarLeft" Enabled="pagination.CurrentUserState.PageIndex > 0" OnClick="() => pagination.ChangeCurrentPageIndexAsync(0)" Color="ThemeColor.Link" />
-                        <HxButton Icon="BootstrapIcon.ChevronLeft" Enabled="pagination.CurrentUserState.PageIndex > 0" OnClick="() => pagination.ChangeCurrentPageIndexAsync(pagination.CurrentUserState.PageIndex - 1)" Color="ThemeColor.Link" />
-                        <HxButton Icon="BootstrapIcon.ChevronRight" Enabled="pagination.CurrentUserState.PageIndex + 1 < totalPages" OnClick="() => pagination.ChangeCurrentPageIndexAsync(pagination.CurrentUserState.PageIndex + 1)" Color="ThemeColor.Link" />
-                        <HxButton Icon="BootstrapIcon.ChevronBarRight" Enabled="pagination.CurrentUserState.PageIndex + 1 < totalPages" OnClick="() => pagination.ChangeCurrentPageIndexAsync(totalPages - 1)" Color="ThemeColor.Link" />
+                        <HxButton Icon="BootstrapIcon.ChevronBarLeft" Enabled="pagination.CurrentUserState.PageIndex > 0" 
+                                  OnClick="() => pagination.ChangeCurrentPageIndexAsync(0)" Color="ThemeColor.Link" />
+                        <HxButton Icon="BootstrapIcon.ChevronLeft" Enabled="pagination.CurrentUserState.PageIndex > 0" 
+                                  OnClick="() => pagination.ChangeCurrentPageIndexAsync(pagination.CurrentUserState.PageIndex - 1)" Color="ThemeColor.Link" />
+                        <HxButton Icon="BootstrapIcon.ChevronRight" Enabled="pagination.CurrentUserState.PageIndex + 1 < totalPages" 
+                                  OnClick="() => pagination.ChangeCurrentPageIndexAsync(pagination.CurrentUserState.PageIndex + 1)" Color="ThemeColor.Link" />
+                        <HxButton Icon="BootstrapIcon.ChevronBarRight" Enabled="pagination.CurrentUserState.PageIndex + 1 < totalPages" 
+                                  OnClick="() => pagination.ChangeCurrentPageIndexAsync(totalPages - 1)" Color="ThemeColor.Link" />
                     </div>
                 </div>
             </PaginationTemplate>
