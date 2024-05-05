@@ -21,6 +21,7 @@ namespace OddsNBits.Data;
 public class BlogPostFilter
 {
     public string Title { get; set; }
-    public bool IsPublished { get; set; }
-    public bool IsFeatured { get; set; }
+    public DateTime? CreationDate { get; set; }
+    // public bool IsPublished { get; set; }
+    // public bool IsFeatured { get; set; }
 }

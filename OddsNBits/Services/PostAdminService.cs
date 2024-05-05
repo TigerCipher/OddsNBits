@@ -16,18 +16,21 @@
 //     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // -------------------------------------------------------------------------------
 
+using Havit.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using OddsNBits.Data;
 using OddsNBits.Data.Entities;
 using OddsNBits.Helpers;
 using OddsNBits.Models;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace OddsNBits.Services;
 
 public interface IPostAdminService
 {
     Task<PagedResult<BlogPost>> GetAllAsync(int startIndex, int pageSize);
+    Task<PagedResult<BlogPost>> GetFilteredAsync(BlogPostFilter filter, int startIndex, int pageSize);
     Task<BlogPost?> GetByIdAsync(int id);
     Task<BlogPost> SaveAsync(BlogPost post, string userId);
     Task<int> GetTotalCount();
@@ -62,6 +65,31 @@ public class PostAdminService : IPostAdminService
 
             return new PagedResult<BlogPost>(records, count);
         });
+    }
+
+    public async Task<PagedResult<BlogPost>> GetFilteredAsync(BlogPostFilter filter, int startIndex, int pageSize)
+    {
+        // .WhereIf(!string.IsNullOrWhiteSpace(filter.Title), e=> e.Title.Contains(filter.Title, StringComparison.CurrentCultureIgnoreCase))
+        int count = 0;
+        var ctx = await ExecuteOnContext(async context =>
+        {
+            var query = context.BlogPosts.AsNoTracking();
+            var records = await query.Include(b => b.Category)
+                .OrderByDescending(b => b.Id)
+                .ToArrayAsync();
+            count = await query.CountAsync();
+
+            return records;
+        });
+        var results = ctx
+            .WhereIf(!string.IsNullOrWhiteSpace(filter.Title), e => e.Title.Contains(filter.Title, StringComparison.CurrentCultureIgnoreCase))
+            .WhereIf(filter.CreationDate is not null, e => e.CreatedOn.ToShortDateString() == filter.CreationDate?.ToShortDateString())
+            .Skip(startIndex)
+            .Take(pageSize)
+            .ToArray();
+
+
+        return new PagedResult<BlogPost>(results, count);
     }
 
     public async Task<BlogPost?> GetByIdAsync(int id) => await ExecuteOnContext(async context =>

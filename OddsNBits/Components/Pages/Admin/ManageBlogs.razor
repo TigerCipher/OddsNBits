@@ -23,8 +23,9 @@
     </CommandsTemplate>
     <FilterTemplate Context="filterCtx">
         <HxInputText Label="Title" @bind-Value="filterCtx.Title" />
-        <HxCheckbox Text="Published" @bind-Value="filterCtx.IsPublished" />
-        <HxCheckbox Text="Featured" @bind-Value="filterCtx.IsFeatured" />
+        @* <HxCheckbox Text="Published" @bind-Value="filterCtx.IsPublished" /> *@
+        @* <HxCheckbox Text="Featured" @bind-Value="filterCtx.IsFeatured" /> *@
+        <HxInputDate TValue="DateTime?" @bind-Value="filterCtx.CreationDate" Label="Creation Date"/>
     </FilterTemplate>
     <DataTemplate>
         <HxGrid @ref="_gridComponent" TItem="BlogPost" DataProvider="GetGridData" PageSize="_pageSize" Responsive="true">
@@ -135,7 +136,7 @@
 
         return new GridDataProviderResult<BlogPost>()
             {
-                Data = (await PostService.GetAllAsync(request.StartIndex, request.Count!.Value)).Records,
+                Data = (await PostService.GetFilteredAsync(_filterModel, request.StartIndex, request.Count!.Value)).Records,
                 TotalCount = _totalCount
             };
     }
