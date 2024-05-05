@@ -25,10 +25,10 @@
         <HxInputText Label="Title" @bind-Value="filterCtx.Title" />
         @* <HxCheckbox Text="Published" @bind-Value="filterCtx.IsPublished" /> *@
         @* <HxCheckbox Text="Featured" @bind-Value="filterCtx.IsFeatured" /> *@
-        <HxInputDate TValue="DateTime?" @bind-Value="filterCtx.CreationDate" Label="Creation Date"/>
+        <HxInputDateRange @bind-Value="filterCtx.CreationDate" Label="Creation Date Range" CalendarIcon="BootstrapIcon.Calendar"/>
     </FilterTemplate>
     <DataTemplate>
-        <HxGrid @ref="_gridComponent" TItem="BlogPost" DataProvider="GetGridData" PageSize="_pageSize" Responsive="true">
+        <HxGrid @ref="_gridComponent" TItem="BlogPost" DataProvider="GetGridData" PageSize="_pageSize" Responsive="true" @bind-SelectedDataItem="_currentPost">
             <Columns>
                 <HxGridColumn HeaderText="ID" ItemTextSelector="c => c.Id.ToString()" />
                 <HxGridColumn HeaderText="Title" ItemTextSelector="c => c.Title" />
@@ -68,16 +68,13 @@
                         }
                     </ItemTemplate>
                 </HxGridColumn>
-                <HxGridColumn>
-                    <ItemTemplate>
-                        <HxButton CssClass="btn-sm mr-2" OnClick="() => OnEdit(context)">
-                            <HxIcon Icon="BootstrapIcon.Pen" /> Edit
-                        </HxButton>
-                        <HxButton CssClass="btn-sm" OnClick="() => OnDelete(context)">
-                            <HxIcon Icon="BootstrapIcon.ExclamationTriangle" CssClass="text-danger" /> Delete
-                        </HxButton>
-                    </ItemTemplate>
-                </HxGridColumn>
+                <HxContextMenuGridColumn Context="post">
+                    <HxContextMenu>
+                        <HxContextMenuItem Text="Edit" Icon="BootstrapIcon.Pen" OnClick="() => OnEdit(post)"/>
+                        <HxContextMenuItem Text="Delete" Icon="BootstrapIcon.Trash" IconCssClass="text-danger"
+                                           OnClick="() => OnDelete(post)" ConfirmationQuestion="@($"Are you sure you want to delete the post '{post.Title}'? This is irreversible.")"/>
+                    </HxContextMenu>
+                </HxContextMenuGridColumn>
             </Columns>
             <PaginationTemplate Context="pagination">
                 @{
@@ -102,6 +99,9 @@
             </PaginationTemplate>
         </HxGrid>
     </DataTemplate>
+    <DetailTemplate>
+        Selected Post: { ID: <strong>@_currentPost?.Id</strong> , Title: <strong>@_currentPost?.Title</strong> , Slug: <strong>@_currentPost?.Slug</strong> }
+    </DetailTemplate>
 </HxListLayout>
 
 
@@ -113,6 +113,7 @@
 
 @code {
     private HxGrid<BlogPost> _gridComponent;
+    private BlogPost _currentPost;
 
     private bool _isLoading;
     private string? _loadingText;
@@ -147,8 +148,22 @@
         throw new NotImplementedException();
     }
 
-    private Task OnDelete(BlogPost post)
+    private async Task OnDelete(BlogPost post)
     {
-        throw new NotImplementedException();
+        var title = post.Title;
+        _isLoading = true;
+        _loadingText = $"Deleting post '{title}'";
+        try
+        {
+            await PostService.DeleteAsync(post);
+        }catch(Exception ex)
+        {
+            Messenger.AddError($"Failed to delete post '{title}'");
+            _isLoading = false;
+            return;
+        }
+        await _gridComponent.RefreshDataAsync();
+        Messenger.AddInformation(title: "Success", message: $"Post '{title}' has been deleted");
+        _isLoading = false;
     }
 }

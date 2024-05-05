@@ -183,7 +183,7 @@
         catch (Exception ex)
         {
             // TODO: Delete uploaded image file
-            Messenger.AddError("Unexpected Error", ex.Message);
+            Messenger.AddError("Error", ex.Message);
             _isLoading = false;
         }
     }

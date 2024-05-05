@@ -16,12 +16,14 @@
 //     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // -------------------------------------------------------------------------------
 
+using Havit;
+
 namespace OddsNBits.Data;
 
 public class BlogPostFilter
 {
     public string Title { get; set; }
-    public DateTime? CreationDate { get; set; }
+    public DateTimeRange CreationDate { get; set; }
     // public bool IsPublished { get; set; }
     // public bool IsFeatured { get; set; }
 }

@@ -18,12 +18,10 @@
 
 using Havit.Linq;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using OddsNBits.Data;
 using OddsNBits.Data.Entities;
 using OddsNBits.Helpers;
 using OddsNBits.Models;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace OddsNBits.Services;
 
@@ -34,6 +32,7 @@ public interface IPostAdminService
     Task<BlogPost?> GetByIdAsync(int id);
     Task<BlogPost> SaveAsync(BlogPost post, string userId);
     Task<int> GetTotalCount();
+    Task DeleteAsync(BlogPost post);
 }
 
 public class PostAdminService : IPostAdminService
@@ -83,7 +82,12 @@ public class PostAdminService : IPostAdminService
         });
         var results = ctx
             .WhereIf(!string.IsNullOrWhiteSpace(filter.Title), e => e.Title.Contains(filter.Title, StringComparison.CurrentCultureIgnoreCase))
-            .WhereIf(filter.CreationDate is not null, e => e.CreatedOn.ToShortDateString() == filter.CreationDate?.ToShortDateString())
+            // Filter if start date is given but not end date, this means no range, look for single day
+            .WhereIf(filter.CreationDate.StartDate is not null && filter.CreationDate.EndDate is null,
+                e => e.CreatedOn.ToShortDateString() == filter.CreationDate.StartDate?.ToShortDateString())
+            // Filter if both start and end date are given
+            .WhereIf(filter.CreationDate.StartDate is not null && filter.CreationDate.EndDate is not null,
+                e=> filter.CreationDate.StartDate <= e.CreatedOn && e.CreatedOn < filter.CreationDate.EndDate!.Value.AddDays(1))
             .Skip(startIndex)
             .Take(pageSize)
             .ToArray();
@@ -154,6 +158,24 @@ public class PostAdminService : IPostAdminService
 
             await ctx.SaveChangesAsync();
             return post;
+        });
+    }
+
+    public async Task DeleteAsync(BlogPost post)
+    {
+        await ExecuteOnContext<Task?>(async context =>
+        {
+            if (post.Id != 0)
+            {
+                var dbpost = await context.BlogPosts.FindAsync(post.Id);
+                context.BlogPosts.Remove(dbpost!);
+                await context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new Exception("Cannot delete a non-existent post");
+            }
+            return null;
         });
     }
 
