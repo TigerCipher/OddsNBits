@@ -1,4 +1,6 @@
 ﻿@page "/author/new-post"
+@page "/author/edit/{Id:int?}"
+
 @using System.Diagnostics
 @using Microsoft.AspNetCore.Authorization
 @using OddsNBits.Data.Entities
@@ -22,7 +24,14 @@
 <HxMessageBoxHost />
 
 @* <div class="container"> *@
-<h1 class="p-6 ml-6 mr-6">Create Post</h1>
+<div class="d-flex flex-row justify-content-between mb-6">
+    <h1 class="ml-6 mr-6">Create Post</h1>
+    <AuthorizeView Roles="Admin">
+        <Authorized>
+            <NavLink Href="/admin/manage-posts" class="mr-6 btn btn-primary"><HxIcon Icon="BootstrapIcon.ArrowReturnLeft" /> Return</NavLink>
+        </Authorized>
+    </AuthorizeView>
+</div>
 <EditForm Model="_model" class="pl-6 ml-6 mr-6" OnValidSubmit="SavePostAsync">
     <DataAnnotationsValidator />
     <ValidationSummary />
@@ -88,6 +97,10 @@
 }
 
 @code {
+
+    [Parameter]
+    public int? Id { get; set; }
+
     private readonly BlogPostModel _model = new();
     private bool _isLoading;
     private string? _loadingText;
@@ -176,13 +189,14 @@
                     IsPublished = _model.IsPublished,
                     IsFeatured = _model.IsFeatured
                 };
-            await PostService.SaveAsync(dbpost, userid);
+           dbpost = await PostService.SaveAsync(dbpost, userid);
 
             _isLoading = false;
             _imageFile = null;
             // TODO: Toast does not get sent when we navigate. Might need to have manage-posts page take a parameter to indicate if it was saved or not? Or maybe redirection is a good enough indication
             Messenger.AddInformation($"Post '{_model.Title}' saved successfully");
-            NavigationManager.NavigateTo("/admin/manage-posts"); // TODO: Should only navigate here if admin, authors should navigate to homepage?
+            NavigationManager.NavigateTo($"/admin/manage-posts/{dbpost.Id}"); // TODO: Should only navigate here if admin, authors should navigate to homepage?
+                                                                 // await Task.Delay(1000);
         }
         catch (Exception ex)
         {

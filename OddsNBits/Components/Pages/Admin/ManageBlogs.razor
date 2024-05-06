@@ -1,4 +1,7 @@
 ﻿@page "/admin/manage-posts"
+@page "/admin/manage-posts/{SavedId:int?}"
+
+@using Humanizer.Localisation.NumberToWords
 @using OddsNBits.Data
 @using OddsNBits.Data.Entities
 
@@ -23,16 +26,35 @@
     </CommandsTemplate>
     <FilterTemplate Context="filterCtx">
         <HxInputText Label="Title" @bind-Value="filterCtx.Title" />
-        <HxInputDateRange @bind-Value="filterCtx.CreationDate" Label="Creation Date Range" CalendarIcon="BootstrapIcon.Calendar"/>
-        <HxCheckbox Text="Show only published posts" @bind-Value="filterCtx.ShowOnlyPublished"/>
-        <HxCheckbox Text="Show only featured posts" @bind-Value="filterCtx.ShowOnlyFeatured"/>
+        <HxInputDateRange @bind-Value="filterCtx.CreationDate" Label="Creation Date Range" CalendarIcon="BootstrapIcon.Calendar" />
+        <HxCheckbox Text="Show only published posts" @bind-Value="filterCtx.ShowOnlyPublished" />
+        <HxCheckbox Text="Show only featured posts" @bind-Value="filterCtx.ShowOnlyFeatured" />
     </FilterTemplate>
     <DataTemplate>
-        <HxGrid @ref="_gridComponent" TItem="BlogPost" DataProvider="GetGridData" PageSize="_pageSize" Responsive="true" @bind-SelectedDataItem="_currentPost">
+        <HxGrid @ref="_gridComponent" TItem="BlogPost" DataProvider="GetGridData" Striped="true"
+                PageSize="_pageSize" Responsive="true" @bind-SelectedDataItem="_currentPost">
             <Columns>
                 <HxGridColumn HeaderText="ID" ItemTextSelector="c => c.Id.ToString()" />
-                <HxGridColumn HeaderText="Title" ItemTextSelector="c => c.Title" ItemCssClass="grid-max-width" />
-                <HxGridColumn HeaderText="Slug" ItemTextSelector="c => c.Slug" ItemCssClass="grid-max-width"/>
+                @* <HxGridColumn HeaderText="Title" ItemTextSelector="c => c.Title" ItemCssClass="grid-max-width" /> *@
+                @* <HxGridColumn HeaderText="Slug" ItemTextSelector="c => c.Slug" ItemCssClass="grid-max-width" /> *@
+                <HxGridColumn HeaderText="Details">
+                    <ItemTemplate>
+                        <div class="py-2" style="display: grid; grid-template-columns: 60px auto; grid-column-gap: 8px">
+                            <img src="@context.Image" style="height: 60px; width: 60px; object-fit: cover" alt="Thumbnail image for @context.Title" />
+                            <div>
+                                <label class="mb-0 d-block">@context.Title</label>
+                                @if (context.IsPublished)
+                                {
+                                    <NavLink Href="/post" target="_blank">@context.Slug</NavLink>
+                                }
+                                else
+                                {
+                                    <label class="disabled">@context.Slug</label>
+                                }
+                            </div>
+                        </div>
+                    </ItemTemplate>
+                </HxGridColumn>
                 <HxGridColumn HeaderText="Category" ItemTextSelector="c => c.Category.Name" ItemCssClass="grid-max-width" />
                 <HxGridColumn HeaderText="Created On" ItemTextSelector="c => c.CreatedOn.ToShortDateString()" />
                 <HxGridColumn HeaderText="Last Modified" ItemTextSelector="c => c.ModifiedOn?.ToShortDateString() ?? string.Empty" />
@@ -41,13 +63,13 @@
                         @if (context.IsFeatured)
                         {
                             <label class="text-success">
-                                <input type="checkbox" checked="checked" /> Yes
+                                <input type="checkbox" checked="checked" @onchange="@(() => OnFeatureChange(context))" /> Yes
                             </label>
                         }
                         else
                         {
                             <label class="text-danger">
-                                <input type="checkbox" /> No
+                                <input type="checkbox" @onchange="@(() => OnFeatureChange(context))" /> No
                             </label>
                         }
                     </ItemTemplate>
@@ -57,22 +79,24 @@
                         @if (context.IsPublished)
                         {
                             <label class="text-success">
-                                <input type="checkbox" checked="checked" /> Yes
+                                <input type="checkbox" checked="checked" @onchange="@(() => OnPublishChange(context))" /> Yes
                             </label>
                         }
                         else
                         {
                             <label class="text-danger">
-                                <input type="checkbox" /> No
+                                <input type="checkbox" @onchange="@(() => OnPublishChange(context))" /> No
                             </label>
                         }
                     </ItemTemplate>
                 </HxGridColumn>
                 <HxContextMenuGridColumn Context="post">
                     <HxContextMenu>
-                        <HxContextMenuItem Text="Edit" Icon="BootstrapIcon.Pen" OnClick="() => OnEdit(post)"/>
+                        <NavLink Href=@($"/author/edit/{post.Id}") data-enhance-nav="false" class="text-black">
+                            <HxContextMenuItem Icon="BootstrapIcon.Pen" Text="Edit" />
+                        </NavLink>
                         <HxContextMenuItem Text="Delete" Icon="BootstrapIcon.Trash" IconCssClass="text-danger"
-                                           OnClick="() => OnDelete(post)" ConfirmationQuestion="@($"Are you sure you want to delete the post '{post.Title}'? This is irreversible.")"/>
+                                           OnClick="() => OnDelete(post)" ConfirmationQuestion="@($"Are you sure you want to delete the post '{post.Title}'? This is irreversible.")" />
                     </HxContextMenu>
                 </HxContextMenuGridColumn>
             </Columns>
@@ -90,13 +114,13 @@
                         Showing @firstItemPosition to @lastItemPosition of @_totalCount entries
                     </div>
                     <div class="col d-flex align-items-center justify-content-end">
-                        <HxButton Icon="BootstrapIcon.ChevronBarLeft" Enabled="pagination.CurrentUserState.PageIndex > 0" 
+                        <HxButton Icon="BootstrapIcon.ChevronBarLeft" Enabled="pagination.CurrentUserState.PageIndex > 0"
                                   OnClick="() => pagination.ChangeCurrentPageIndexAsync(0)" Color="ThemeColor.Link" />
-                        <HxButton Icon="BootstrapIcon.ChevronLeft" Enabled="pagination.CurrentUserState.PageIndex > 0" 
+                        <HxButton Icon="BootstrapIcon.ChevronLeft" Enabled="pagination.CurrentUserState.PageIndex > 0"
                                   OnClick="() => pagination.ChangeCurrentPageIndexAsync(pagination.CurrentUserState.PageIndex - 1)" Color="ThemeColor.Link" />
-                        <HxButton Icon="BootstrapIcon.ChevronRight" Enabled="pagination.CurrentUserState.PageIndex + 1 < totalPages" 
+                        <HxButton Icon="BootstrapIcon.ChevronRight" Enabled="pagination.CurrentUserState.PageIndex + 1 < totalPages"
                                   OnClick="() => pagination.ChangeCurrentPageIndexAsync(pagination.CurrentUserState.PageIndex + 1)" Color="ThemeColor.Link" />
-                        <HxButton Icon="BootstrapIcon.ChevronBarRight" Enabled="pagination.CurrentUserState.PageIndex + 1 < totalPages" 
+                        <HxButton Icon="BootstrapIcon.ChevronBarRight" Enabled="pagination.CurrentUserState.PageIndex + 1 < totalPages"
                                   OnClick="() => pagination.ChangeCurrentPageIndexAsync(totalPages - 1)" Color="ThemeColor.Link" />
                     </div>
                 </div>
@@ -115,7 +139,22 @@
     <Loader Text="@_loadingText" />
 }
 
+@* <style type="text/css"> *@
+@*     .table > tbody > tr > td { *@
+@*         vertical-align: middle; *@
+@*         horiz-align: center; *@
+@*     } *@
+@*     .table > thead > th { *@
+@*         vertical-align: middle; *@
+@*         horiz-align: center; *@
+@*     } *@
+@* </style> *@
+
 @code {
+
+    [Parameter]
+    public int? SavedId { get; set; }
+
     private HxGrid<BlogPost> _gridComponent;
     private BlogPost _currentPost;
 
@@ -134,6 +173,22 @@
         _totalCount = await PostService.GetTotalCount();
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SavedId != null && SavedId != 0)
+        {
+            var post = await PostService.GetByIdAsync(SavedId!.Value);
+            if (post is not null)
+            {
+                Messenger.AddInformation("Success", $"Post '{post!.Title}' saved successfully!");
+            }
+            else
+            {
+                Messenger.AddError("Unexpected Error", $"Failed to save post with ID: {SavedId} - could not find a post with this ID to save");
+            }
+        }
+    }
+
 
     private async Task<GridDataProviderResult<BlogPost>> GetGridData(GridDataProviderRequest<BlogPost> request)
     {
@@ -147,11 +202,6 @@
     }
 
 
-    private Task OnEdit(BlogPost post)
-    {
-        throw new NotImplementedException();
-    }
-
     private async Task OnDelete(BlogPost post)
     {
         var title = post.Title;
@@ -160,7 +210,8 @@
         try
         {
             await PostService.DeleteAsync(post);
-        }catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             Messenger.AddError($"Failed to delete post '{title}'");
             _isLoading = false;
@@ -169,5 +220,25 @@
         await _gridComponent.RefreshDataAsync();
         Messenger.AddInformation(title: "Success", message: $"Post '{title}' has been deleted");
         _isLoading = false;
+    }
+
+    private async Task OnFeatureChange(BlogPost post)
+    {
+        _loadingText = "Saving changes...";
+        _isLoading = true;
+        post.IsFeatured = !post.IsFeatured;
+        await PostService.SaveAsync(post, post.UserId);
+        _isLoading = false;
+        NavigationManager.Refresh();
+    }
+
+    private async Task OnPublishChange(BlogPost post)
+    {
+        _loadingText = "Saving changes...";
+        _isLoading = true;
+        post.IsPublished = !post.IsPublished;
+        await PostService.SaveAsync(post, post.UserId);
+        _isLoading = false;
+        NavigationManager.Refresh();
     }
 }
