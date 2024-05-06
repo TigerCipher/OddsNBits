@@ -22,6 +22,7 @@ using OddsNBits.Data;
 using OddsNBits.Data.Entities;
 using OddsNBits.Helpers;
 using OddsNBits.Models;
+using System;
 
 namespace OddsNBits.Services;
 
@@ -33,6 +34,8 @@ public interface IPostAdminService
     Task<BlogPost> SaveAsync(BlogPost post, string userId);
     Task<int> GetTotalCount();
     Task DeleteAsync(BlogPost post);
+    BlogPostModel ModelFromEntity(BlogPost entity);
+    BlogPost EntityFromModel(BlogPostModel model, BlogPost entity);
 }
 
 public class PostAdminService : IPostAdminService
@@ -200,5 +203,29 @@ public class PostAdminService : IPostAdminService
 
             return slug;
         });
+    }
+
+    public BlogPost EntityFromModel(BlogPostModel model, BlogPost entity)
+    {
+        entity.Title = model.Title;
+        entity.Introduction = model.Introduction;
+        entity.Content = model.Content;
+        entity.CategoryId = model.CategoryId;
+        entity.IsPublished = model.IsPublished;
+        entity.IsFeatured = model.IsFeatured;
+        return entity;
+    }
+
+    public BlogPostModel ModelFromEntity(BlogPost entity)
+    {
+        return new BlogPostModel
+        {
+            Title = entity.Title,
+            Introduction = entity.Introduction,
+            Content = entity.Content,
+            CategoryId = entity.CategoryId,
+            IsPublished = entity.IsPublished,
+            IsFeatured = entity.IsFeatured,
+        };
     }
 }

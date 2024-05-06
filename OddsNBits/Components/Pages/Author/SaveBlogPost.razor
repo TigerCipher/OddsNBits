@@ -2,6 +2,7 @@
 @page "/author/edit/{Id:int?}"
 
 @using System.Diagnostics
+@using Humanizer.Localisation.NumberToWords
 @using Microsoft.AspNetCore.Authorization
 @using OddsNBits.Data.Entities
 @using OddsNBits.Models
@@ -101,7 +102,8 @@
     [Parameter]
     public int? Id { get; set; }
 
-    private readonly BlogPostModel _model = new();
+    private BlogPostModel _model = new();
+    private BlogPost? _editEntity;
     private bool _isLoading;
     private string? _loadingText;
     // private IEnumerable<Category> _categories;
@@ -123,11 +125,26 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _loadingText = "Loading editor";
+        _isLoading = true;
         _categories = await CategoryService.GetCategoriesAsync();
-        foreach (var c in _categories)
+
+        // Edit mode
+        if (Id is > 0)
         {
-            Debug.WriteLine($"Cat ID: {c.Id}");
+            var post = await PostService.GetByIdAsync(Id.Value);
+            if (post is null)
+            {
+                NavigationManager.NavigateTo("/admin/manage-posts", replace: true);
+                _isLoading = false;
+                return;
+            }
+            _editEntity = post;
+            _model = PostService.ModelFromEntity(post);
+            _imageUrl = post.Image;
         }
+
+        _isLoading = false;
     }
 
 
@@ -158,7 +175,8 @@
 
 
             // Upload the image file
-            string? url;
+            string? imageToDelete = null;
+            string? url = null;
             if (_imageFile is not null)
             {
                 url = await SaveFileAsync(_imageFile);
@@ -168,41 +186,74 @@
                     _isLoading = false;
                     return;
                 }
-            }
-            else
-            {
-                Messenger.AddError("Image file could not be loaded");
-                _isLoading = false;
-                return;
+                // Edit mode. editEntity's image shouldn't be null, but just in case
+                if(_editEntity is not null && !string.IsNullOrWhiteSpace(_editEntity.Image))
+                {
+                    imageToDelete = _editEntity.Image;
+                }
             }
 
             var authState = await AuthProvider.GetAuthenticationStateAsync();
             var userid = authState.User.UserId();
 
-            BlogPost dbpost = new()
+            var id = _editEntity?.Id;
+            if (_editEntity is not null)
+            {
+                if (!string.IsNullOrWhiteSpace(url))
                 {
-                    Title = _model.Title,
-                    Introduction = _model.Introduction,
-                    Content = _model.Content,
-                    Image = url,
-                    CategoryId = _model.CategoryId,
-                    IsPublished = _model.IsPublished,
-                    IsFeatured = _model.IsFeatured
-                };
-           dbpost = await PostService.SaveAsync(dbpost, userid);
+                    _editEntity.Image = url;
+                }
+                _editEntity = PostService.EntityFromModel(_model, _editEntity);
+                _editEntity = await PostService.SaveAsync(_editEntity, userid);
+            }
+            else
+            {
+                BlogPost dbpost = new()
+                    {
+                        Title = _model.Title,
+                        Introduction = _model.Introduction,
+                        Content = _model.Content,
+                        Image = url!,
+                        CategoryId = _model.CategoryId,
+                        IsPublished = _model.IsPublished,
+                        IsFeatured = _model.IsFeatured
+                    };
+                dbpost = await PostService.SaveAsync(dbpost, userid);
+                id = dbpost.Id;
+            }
+
+            if(!string.IsNullOrWhiteSpace(imageToDelete))
+            {
+                // Delete the old image, this should only occur when editing a post
+                DeleteImage(imageToDelete);
+            }
+
 
             _isLoading = false;
             _imageFile = null;
             // TODO: Toast does not get sent when we navigate. Might need to have manage-posts page take a parameter to indicate if it was saved or not? Or maybe redirection is a good enough indication
             Messenger.AddInformation($"Post '{_model.Title}' saved successfully");
-            NavigationManager.NavigateTo($"/admin/manage-posts/{dbpost.Id}"); // TODO: Should only navigate here if admin, authors should navigate to homepage?
-                                                                 // await Task.Delay(1000);
+            NavigationManager.NavigateTo($"/admin/manage-posts/{id}"); // TODO: Should only navigate here if admin, authors should navigate to homepage?
         }
         catch (Exception ex)
         {
             // TODO: Delete uploaded image file
             Messenger.AddError("Error", ex.Message);
             _isLoading = false;
+        }
+    }
+
+    private void DeleteImage(string imageUrl)
+    {
+        var imgPath = imageUrl.Replace('/', '\\');
+        var fullpath = Path.Combine(WebHost.WebRootPath, imgPath);
+        try
+        {
+            File.Delete(fullpath);
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine($"[WARNING] Failed to delete image: {imageUrl} from {fullpath}");
         }
     }
 

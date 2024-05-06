@@ -1,7 +1,7 @@
 ﻿@page "/admin/manage-posts"
 @page "/admin/manage-posts/{SavedId:int?}"
 
-@using Humanizer.Localisation.NumberToWords
+@using System.Diagnostics
 @using OddsNBits.Data
 @using OddsNBits.Data.Entities
 
@@ -12,6 +12,7 @@
 @inject IHxMessageBoxService MessageBox
 @inject IHxMessengerService Messenger
 @inject NavigationManager NavigationManager
+@inject IWebHostEnvironment WebHost
 
 <DashboardHeader Title="Manage Posts">
     <ActionButtons>
@@ -205,6 +206,7 @@
     private async Task OnDelete(BlogPost post)
     {
         var title = post.Title;
+        var imageUrl = post.Image;
         _isLoading = true;
         _loadingText = $"Deleting post '{title}'";
         try
@@ -217,6 +219,19 @@
             _isLoading = false;
             return;
         }
+
+        // Delete the image
+        var imgPath = imageUrl.Replace('/', '\\');
+        var fullpath = Path.Combine(WebHost.WebRootPath, imgPath);
+        try
+        {
+            File.Delete(fullpath);
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine($"[WARNING] Failed to delete image: {imageUrl} from {fullpath}");
+        }
+
         await _gridComponent.RefreshDataAsync();
         Messenger.AddInformation(title: "Success", message: $"Post '{title}' has been deleted");
         _isLoading = false;
