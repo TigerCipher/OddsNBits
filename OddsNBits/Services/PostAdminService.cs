@@ -31,6 +31,7 @@ public interface IPostAdminService
     Task<PagedResult<BlogPost>> GetAllAsync(int startIndex, int pageSize);
     Task<PagedResult<BlogPost>> GetFilteredAsync(BlogPostFilter filter, int startIndex, int pageSize);
     Task<BlogPost?> GetByIdAsync(int id);
+    Task<BlogPost?> GetBySlugAsync(string slug);
     Task<BlogPost> SaveAsync(BlogPost post, string userId);
     Task<int> GetTotalCount();
     Task DeleteAsync(BlogPost post);
@@ -103,6 +104,10 @@ public class PostAdminService : IPostAdminService
 
     public async Task<BlogPost?> GetByIdAsync(int id) => await ExecuteOnContext(async context =>
         await context.BlogPosts.AsNoTracking().Include(b => b.Category).FirstOrDefaultAsync(b => b.Id == id)
+    );
+
+    public async Task<BlogPost?> GetBySlugAsync(string slug) => await ExecuteOnContext(async context =>
+        await context.BlogPosts.AsNoTracking().Include(c => c.Category).Include(b => b.User).FirstOrDefaultAsync(c => c.Slug == slug)
     );
 
     public async Task<BlogPost> SaveAsync(BlogPost post, string userId)

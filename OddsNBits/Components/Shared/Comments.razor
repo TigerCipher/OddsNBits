@@ -1,0 +1,38 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using System.Diagnostics
+
+@rendermode InteractiveServer
+
+Comments
+<EditForm Model="_model" OnSubmit="SubmitComment">
+    <InputTextArea @bind-Value="_model.Comment" placeholder="Enter your comment" />
+    <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit>
+</EditForm>
+<hr />
+@if (_displayComment)
+{
+    <p>@_model.Comment</p>
+}
+
+@code {
+    private bool _displayComment = false;
+
+
+    private void SubmitComment()
+    {
+        _displayComment = true;
+        Debug.WriteLine("COMMENT SUBMITTED");
+        // TODO
+        StateHasChanged();
+    }
+
+    private readonly FormModel _model = new();
+
+    private class FormModel : ICloneable
+    {
+        [Required]
+        public string Comment { get; set; }
+
+        public object Clone() => MemberwiseClone();
+    }
+}

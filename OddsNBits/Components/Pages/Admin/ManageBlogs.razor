@@ -46,7 +46,7 @@
                                 <label class="mb-0 d-block">@context.Title</label>
                                 @if (context.IsPublished)
                                 {
-                                    <NavLink Href="/post" target="_blank">@context.Slug</NavLink>
+                                    <NavLink Href="@($"/posts/{context.Slug}")" target="_blank">@context.Slug</NavLink>
                                 }
                                 else
                                 {
