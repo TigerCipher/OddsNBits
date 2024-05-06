@@ -18,8 +18,8 @@
 
 <PageTitle>Create Post | Odds &amp; Bits</PageTitle>
 
-<HxMessenger Position="ToastContainerPosition.TopCenter"/>
-<HxMessageBoxHost/>
+<HxMessenger Position="ToastContainerPosition.TopCenter" />
+<HxMessageBoxHost />
 
 @* <div class="container"> *@
 <h1 class="p-6 ml-6 mr-6">Create Post</h1>
@@ -27,7 +27,7 @@
     <DataAnnotationsValidator />
     <ValidationSummary />
     <div class="row">
-        <div class="col-sm-6">
+        <div class="col-sm-4">
             <div class="mb-3">
                 <HxInputText Label="Title" @bind-Value="_model.Title" Placeholder="Title" />
                 @* <ValidationMessage For="() => _model.Title" class="text-danger" /> *@
@@ -36,7 +36,7 @@
                 <label class="form-label">Category</label>
                 <InputSelect @bind-Value="_model.CategoryId" class="form-control">
                     <option value="">-select category-</option>
-                    @foreach(var cat in _categories)
+                    @foreach (var cat in _categories)
                     {
                         <option value="@cat.Id">@cat.Name</option>
                     }
@@ -47,7 +47,7 @@
                 <ValidationMessage For="() => _model.CategoryId" />
             </div>
             <div class="mb-3">
-                <HxInputText Label="Introduction" @bind-Value="_model.Introduction" Placeholder="Short introduction" />
+                <HxInputTextArea Label="Introduction" @bind-Value="_model.Introduction" Placeholder="Short introduction" />
                 @* <ValidationMessage For="() => _model.Introduction" class="text-danger" /> *@
             </div>
             @if (!string.IsNullOrWhiteSpace(_imageUrl))
@@ -70,10 +70,10 @@
                 <HxSubmit Color="ThemeColor.Success" Text="Save" />
             </div>
         </div>
-        <div class="col-sm-6 d-flex">
+        <div class="col-sm-8 d-flex">
             <div class="mb-3 flex-grow-1">
                 <Editor ScriptSrc="js/tinymce/tinymce.min.js" @bind-Value="_model.Content" Conf="_editorConf" Field="() => _model.Content" />
-                <ValidationMessage For="() => _model.Content"/>
+                <ValidationMessage For="() => _model.Content" />
             </div>
 
         </div>
@@ -98,12 +98,14 @@
     private string? _imageUrl;
     private IBrowserFile? _imageFile;
 
+    private const long MaxImageFileSize = 1572864; // bytes. Roughly 1.5 MB - TODO: Probably best to lower this as this is currently only used for the post thumbnail image
     private readonly Dictionary<string, object> _editorConf = new()
     {
         { "menubar", true },
         { "plugins", "preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion" },
         { "toolbar", "undo redo | accordion accordionremove | blocks fontfamily fontsize | bold italic underline strikethrough | align numlist bullist | link image | table media | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | code fullscreen preview | save print | pagebreak anchor codesample | ltr rtl" },
         { "codesample_global_prismjs", true},
+        { "min_height", 800}
     };
 
     protected override async Task OnInitializedAsync()
@@ -124,7 +126,7 @@
 
     private async Task PreviewImageAsync(IBrowserFile file)
     {
-        await using var imgStream = file.OpenReadStream();
+        await using var imgStream = file.OpenReadStream(MaxImageFileSize);
         using MemoryStream memStream = new();
         await imgStream.CopyToAsync(memStream);
         Debug.WriteLine($"Image type: {file.ContentType}");
@@ -176,9 +178,11 @@
                 };
             await PostService.SaveAsync(dbpost, userid);
 
-            Messenger.AddInformation($"Post '{_model.Title}' saved successfully");
             _isLoading = false;
             _imageFile = null;
+            // TODO: Toast does not get sent when we navigate. Might need to have manage-posts page take a parameter to indicate if it was saved or not? Or maybe redirection is a good enough indication
+            Messenger.AddInformation($"Post '{_model.Title}' saved successfully");
+            NavigationManager.NavigateTo("/admin/manage-posts"); // TODO: Should only navigate here if admin, authors should navigate to homepage?
         }
         catch (Exception ex)
         {
@@ -203,7 +207,7 @@
         await using FileStream fs = new(fullpath, FileMode.Create);
         try
         {
-            await file.OpenReadStream().CopyToAsync(fs);
+            await file.OpenReadStream(MaxImageFileSize).CopyToAsync(fs);
 
             return filename.Replace('\\', '/');
         }

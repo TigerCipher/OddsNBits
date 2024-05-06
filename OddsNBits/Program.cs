@@ -67,6 +67,8 @@ builder.Services.AddTransient<IPostAdminService, PostAdminService>();
 
 // builder.Services.AddControllers();
 
+
+
 var app = builder.Build();
 
 await SeedData(app.Services);

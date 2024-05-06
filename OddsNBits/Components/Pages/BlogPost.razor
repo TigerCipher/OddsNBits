@@ -1,13 +1,11 @@
 ﻿@page "/blog"
 @using System.ComponentModel.DataAnnotations
 @using System.Diagnostics
-@using Microsoft.EntityFrameworkCore.Design.Internal
-@using Microsoft.Extensions.Logging.Console
 
 @* @rendermode InteractiveServer *@
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@* @rendermode @(new InteractiveServerRenderMode(prerender: false)) *@
 
-@inject IJSRuntime Js
+@* @inject IJSRuntime Js *@
 
 <PageTitle>BLOG | Odds &amp; Bits</PageTitle>
 
@@ -77,22 +75,17 @@ MAIN
             @*<SubscribeForm />*@
         </div>
     </div>
-    <hr/>
-    Comments
-    <EditForm Model="_model" OnSubmit="SubmitComment">
-        <InputTextArea @bind-Value="_model.Comment" placeholder="Enter your comment"/>
-        <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit>
-    </EditForm>
-    @* <HxModelEditForm @bind-Model="_model"> *@
-    @*     <HxInputTextArea @bind-Value="@context.Comment" BindEvent="BindEvent.OnInput" Placeholder="Leave a comment"></HxInputTextArea> *@
-    @*     <HxButton Color="ThemeColor.Success" OnClick="SubmitComment">Submit</HxButton> *@
-    @*     $1$ <HxSubmit Color="ThemeColor.Success" OnClick="SubmitComment" FormId="CommentId">Submit</HxSubmit> #1# *@
-    @* </HxModelEditForm> *@
-    <hr/>
-    @if(_displayComment)
-    {
-        <p>@_model.Comment</p>
-    }
+    @* <hr/> *@
+    @* Comments *@
+    @* <EditForm Model="_model" OnSubmit="SubmitComment"> *@
+    @*     <InputTextArea @bind-Value="_model.Comment" placeholder="Enter your comment"/> *@
+    @*     <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit> *@
+    @* </EditForm> *@
+    @* <hr/> *@
+    @* @if(_displayComment) *@
+    @* { *@
+    @*     <p>@_model.Comment</p> *@
+    @* } *@
 </div>
 
 
@@ -143,28 +136,28 @@ def greet(name):
 print(greet('World'))
 ";
 
-    private bool _displayComment = false;
+    // private bool _displayComment = false;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await Js.InvokeVoidAsync("hljs.highlightAll");
-    }
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     await Js.InvokeVoidAsync("hljs.highlightAll");
+    // }
 
-    private void SubmitComment()
-    {
-        _displayComment = true;
-        Debug.WriteLine("COMMENT SUBMITTED");
-        // TODO
-        StateHasChanged();
-    }
+    // private void SubmitComment()
+    // {
+    //     _displayComment = true;
+    //     Debug.WriteLine("COMMENT SUBMITTED");
+    //     // TODO
+    //     StateHasChanged();
+    // }
 
-    private FormModel _model = new();
-
-    private class FormModel : ICloneable
-    {
-        [Required]
-        public string Comment { get; set; }
-
-        public object Clone() => MemberwiseClone();
-    }
+    // private FormModel _model = new();
+    //
+    // private class FormModel : ICloneable
+    // {
+    //     [Required]
+    //     public string Comment { get; set; }
+    //
+    //     public object Clone() => MemberwiseClone();
+    // }
 }

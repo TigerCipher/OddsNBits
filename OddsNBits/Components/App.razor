@@ -21,6 +21,10 @@
 
     <link rel="stylesheet" href="app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <!-- This makes the PageTitle work only on interactive pages and not static -->
+    @* <HeadOutlet @rendermode="InteractiveServer"/> *@
+    
+    <!-- This makes the PageTitle work only on static pages and not interactive -->
     <HeadOutlet />
 </head>
 
