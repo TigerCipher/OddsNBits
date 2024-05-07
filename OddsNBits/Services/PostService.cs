@@ -17,7 +17,6 @@
 // -------------------------------------------------------------------------------
 
 using Microsoft.EntityFrameworkCore;
-using OddsNBits.Components.Pages;
 using OddsNBits.Data;
 using OddsNBits.Data.Entities;
 using OddsNBits.Models;
@@ -30,6 +29,7 @@ public interface IPostService
     Task<BlogPost[]> GetPopularAsync(int count, int categoryId = 0);
     Task<BlogPost[]> GetLatestAsync(int count, int categoryId = 0);
     Task<DetailPageModel> GetBySlugAsync(string slug, int count = 4);
+    Task<BlogPost?> GetMainFeatureAsync();
 }
 
 public class PostService : IPostService
@@ -60,15 +60,26 @@ public class PostService : IPostService
                 query = query.Where(c => c.CategoryId == categoryId);
             }
 
-            var result = await query.Where(b=>b.IsFeatured).OrderBy(_ => Guid.NewGuid()).Take(count).ToArrayAsync();
+            var result = await query.Where(b=>b.IsFeatured && !b.IsMainFeature).OrderBy(_ => Guid.NewGuid()).Take(count).ToArrayAsync();
             if(result.Length < count)
             {
                 // not enough featured posts
-                var fillers = await query.Where(b => !b.IsFeatured).OrderBy(_ => Guid.NewGuid()).Take(count - result.Length).ToArrayAsync();
+                var fillers = await query.Where(b => !b.IsFeatured && !b.IsMainFeature).OrderBy(_ => Guid.NewGuid()).Take(count - result.Length).ToArrayAsync();
                 result = [.. result, .. fillers];
             }
 
             return result;
+        });
+    }
+
+    public async Task<BlogPost?> GetMainFeatureAsync()
+    {
+        return await ExecuteOnContext(async context =>
+        {
+            return await context.BlogPosts.AsNoTracking()
+                .Include(b => b.User).Include(b => b.Category)
+                .FirstOrDefaultAsync(b => b.IsPublished && b.IsMainFeature);
+
         });
     }
 

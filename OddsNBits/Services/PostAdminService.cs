@@ -162,6 +162,17 @@ public class PostAdminService : IPostAdminService
                     {
                         dbpost.PublishedOn = null;
                     }
+
+                    // Main feature flag has changed, make sure all other posts have this flag set to false if we want this true
+                    if (post.IsMainFeature && dbpost.IsMainFeature != post.IsMainFeature)
+                    {
+                        var currentMain = await ctx.BlogPosts.FirstOrDefaultAsync(b => b.IsMainFeature);
+                        if (currentMain is not null)
+                        {
+                            currentMain.IsMainFeature = false;
+                        }
+                    }
+                    dbpost.IsMainFeature = post.IsMainFeature;
                 }
 
             }
@@ -218,6 +229,7 @@ public class PostAdminService : IPostAdminService
         entity.CategoryId = model.CategoryId;
         entity.IsPublished = model.IsPublished;
         entity.IsFeatured = model.IsFeatured;
+        entity.IsMainFeature = model.IsMainFeature;
         return entity;
     }
 
@@ -231,6 +243,7 @@ public class PostAdminService : IPostAdminService
             CategoryId = entity.CategoryId,
             IsPublished = entity.IsPublished,
             IsFeatured = entity.IsFeatured,
+            IsMainFeature = entity.IsMainFeature,
         };
     }
 }

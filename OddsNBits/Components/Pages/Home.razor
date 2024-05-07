@@ -9,7 +9,7 @@
 <!--------------------------------------
 HEADER
 --------------------------------------->
-@if(_firstFeatured is not null)
+@if (_firstFeatured is not null)
 {
     <div class="container">
         <div class="jumbotron jumbotron-fluid mb-3 pt-0 pb-0 position-relative bg-lightteal">
@@ -40,11 +40,11 @@ MAIN
     <div class="row justify-content-between">
         <div class="col-md-8">
             <h5 class="font-weight-bold spanborder"><span>Latest Posts</span></h5>
-            <BlogList Posts="_latest"/>
+            <BlogList Posts="_latest" />
         </div>
         <div class="col-md-4 pl-4">
             <h5 class="font-weight-bold spanborder"><span>Most Read</span></h5>
-            <RankedList Posts="_popular"/>
+            <RankedList Posts="_popular" />
         </div>
     </div>
     @* <h5 class="font-weight-bold spanborder"><span>Latest Posts</span></h5> *@
@@ -64,8 +64,14 @@ MAIN
 
     protected override async Task OnInitializedAsync()
     {
+        var mainFeature = await PostService.GetMainFeatureAsync();
+        var takeFeature = 4;
+        if (mainFeature is null)
+        {
+            takeFeature = 5;
+        }
         var posts = await Task.WhenAll(
-            PostService.GetFeaturedAsync(5),
+            PostService.GetFeaturedAsync(takeFeature),
                 PostService.GetLatestAsync(5),
                 PostService.GetPopularAsync(4)
             );
@@ -73,7 +79,13 @@ MAIN
         _latest = posts[1];
         _popular = posts[2];
 
-        _firstFeatured = _featured.First();
-        _featured = _featured.Skip(1).ToArray();
+        if (mainFeature is null)
+        {
+            _firstFeatured = _featured.First();
+            _featured = _featured.Skip(1).ToArray();
+        }else
+        {
+            _firstFeatured = mainFeature;
+        }
     }
 }

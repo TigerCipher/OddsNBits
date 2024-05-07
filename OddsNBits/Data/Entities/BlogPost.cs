@@ -30,6 +30,7 @@ namespace OddsNBits.Data.Entities
 
         public bool IsPublished { get; set; }
         public bool IsFeatured { get; set; }
+        public bool IsMainFeature { get; set; }
 
 
         public DateTime CreatedOn { get; set; }

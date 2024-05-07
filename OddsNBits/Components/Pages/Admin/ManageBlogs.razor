@@ -40,8 +40,8 @@
                 @* <HxGridColumn HeaderText="Slug" ItemTextSelector="c => c.Slug" ItemCssClass="grid-max-width" /> *@
                 <HxGridColumn HeaderText="Details">
                     <ItemTemplate>
-                        <div class="py-2" style="display: grid; grid-template-columns: 60px auto; grid-column-gap: 8px">
-                            <img src="@context.Image" style="height: 60px; width: 60px; object-fit: cover" alt="Thumbnail image for @context.Title" />
+                        <div class=@(context.IsMainFeature ? "py-2 text-success" : "py-2") style="display: grid; grid-template-columns: 60px auto; grid-column-gap: 8px">
+                            <img src="@context.Image" style="height: 60px; width: 60px; object-fit: cover" alt="Thumbnail image for @context.Title"/>
                             <div>
                                 <label class="mb-0 d-block">@context.Title</label>
                                 @if (context.IsPublished)
@@ -96,6 +96,7 @@
                         <NavLink Href=@($"/author/edit/{post.Id}") data-enhance-nav="false" class="text-black">
                             <HxContextMenuItem Icon="BootstrapIcon.Pen" Text="Edit" />
                         </NavLink>
+                        <HxContextMenuItem Icon="BootstrapIcon.Fire" Text="Make Main Feature" IconCssClass="text-danger" OnClick="() => OnMainFeatureChange(post)"/>
                         <HxContextMenuItem Text="Delete" Icon="BootstrapIcon.Trash" IconCssClass="text-danger"
                                            OnClick="() => OnDelete(post)" ConfirmationQuestion="@($"Are you sure you want to delete the post '{post.Title}'? This is irreversible.")" />
                     </HxContextMenu>
@@ -162,8 +163,8 @@
     private bool _isLoading;
     private string? _loadingText;
 
-    private int _pageSize = 3;
-    private readonly List<int> _pageSizes = [3, 5, 10, 20, 30];
+    private int _pageSize = 10;
+    private readonly List<int> _pageSizes = [5, 10, 20, 30];
 
     private BlogPostFilter _filterModel = new();
 
@@ -239,7 +240,7 @@
 
     private async Task OnFeatureChange(BlogPost post)
     {
-        _loadingText = "Saving changes...";
+        _loadingText = "Saving changes";
         _isLoading = true;
         post.IsFeatured = !post.IsFeatured;
         await PostService.SaveAsync(post, post.UserId);
@@ -249,11 +250,22 @@
 
     private async Task OnPublishChange(BlogPost post)
     {
-        _loadingText = "Saving changes...";
+        _loadingText = "Saving changes";
         _isLoading = true;
         post.IsPublished = !post.IsPublished;
         await PostService.SaveAsync(post, post.UserId);
         _isLoading = false;
         NavigationManager.Refresh();
     }
+
+    private async Task OnMainFeatureChange(BlogPost post)
+    {
+        _loadingText = "Changing the main feature";
+        _isLoading = true;
+        post.IsMainFeature = true;
+        await PostService.SaveAsync(post, post.UserId);
+        _isLoading = false;
+        NavigationManager.Refresh(true);
+    }
+
 }

@@ -23,11 +23,14 @@
     [Parameter]
     public string Slug { get; set; }
 
+    [Parameter]
+    public string Title { get;set; }
+
     private void Share()
     {
         SocialMediaSharing.ShareOnSocialMedia(
-            title: "Share this post on Social Media",
-            text: $"Check out this post by {Author} on Odds & Bits!",
+            title: Title,
+            text: $"Check out this post by {Author} on Odds n Bits!",
             url: $"https://oddsnbits.azurewebsites.net/posts/{Slug}"
             );
     }

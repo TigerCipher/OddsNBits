@@ -33,12 +33,12 @@
                             <img class="rounded-circle" src="img/demo/avatar2.jpg" width="70">
                             <small class="ml-2">
                                 @_post.User.DisplayName
-                                <span class="text-muted d-block">@_post.PublishedOn?.ToLongDateString() &middot; 5 min. read</span>
+                                <span class="text-muted d-block">@_post.PublishedOn?.ToLongDateString()</span>
                             </small>
                         </div>
                     </div>
-                    <div class="col-md-6 pr-0 fill">
-                        <img src="@_post.Image" alt="@($"Thumbnail for '{_post.Title}'")">
+                    <div class="col-md-6 pr-0" style="background-size: cover; background-image: url(@_post.Image)">
+                        @* <img src="@_post.Image" alt="@($"Thumbnail for '{_post.Title}'")" style="background-size: cover"> *@
                     </div>
                 </div>
             </div>
@@ -56,7 +56,7 @@
                     @*<div class="text-muted">
                 Share this
                 </div>*@
-                    <ShareThis Author="@_post.User.DisplayName" Slug="@Slug" />
+                    <ShareThis Author="@_post.User.DisplayName" Slug="@Slug" Title="@_post.Title"/>
                 </div>
             </div>
             <div class="col-md-12 col-lg-10">
