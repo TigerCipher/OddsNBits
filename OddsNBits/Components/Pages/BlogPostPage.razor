@@ -6,7 +6,7 @@
 
 @* @inject IJSRuntime Js *@
 
-@inject IPostAdminService PostService
+@inject IPostService PostService
 
 <PageTitle>@_post.Title | Odds &amp; Bits</PageTitle>
 
@@ -91,10 +91,10 @@
         if (!string.IsNullOrWhiteSpace(Slug))
         {
             var post = await PostService.GetBySlugAsync(Slug);
-            if (post is not null)
+            if (!post.IsEmpty())
             {
                 _found = true;
-                _post = post;
+                _post = post.Post!;
             }
         }
     }

@@ -53,6 +53,7 @@ public class CommentService : ICommentService
         {
             var query = context.Comments.AsNoTracking();
             var records = await query.Include(c=>c.User)
+                .Where(b=> b.BlogPostId == postId)
                 .OrderByDescending(b => b.CreatedDate)
                 .ToArrayAsync();
 

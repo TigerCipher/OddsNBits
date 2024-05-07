@@ -1,46 +1,22 @@
-﻿<ol class="list-featured">
-    <li>
-        <span>
-            <h6 class="font-weight-bold">
-                <NavLink href="/blog" class="text-dark">Popular post tile here! Top 4 looks better but top 5 makes more sense</NavLink>
-            </h6>
-            <p class="text-muted">
-                Author Name in CATEGORY NAME
-            </p>
-        </span>
-    </li>
-    <li>
-        <span>
-            <h6 class="font-weight-bold">
-                <NavLink href="/blog" class="text-dark">Popular post tile here! Top 4 looks better but top 5 makes more sense</NavLink>
-            </h6>
-            <p class="text-muted">
-                Author Name in CATEGORY NAME
-            </p>
-        </span>
-    </li>
-    <li>
-        <span>
-            <h6 class="font-weight-bold">
-                <NavLink href="/blog" class="text-dark">Popular post tile here! Top 4 looks better but top 5 makes more sense</NavLink>
-            </h6>
-            <p class="text-muted">
-                Author Name in CATEGORY NAME
-            </p>
-        </span>
-    </li>
-    <li>
-        <span>
-            <h6 class="font-weight-bold">
-                <NavLink href="/blog" class="text-dark">Popular post tile here! Top 4 looks better but top 5 makes more sense</NavLink>
-            </h6>
-            <p class="text-muted">
-                Author Name in CATEGORY NAME
-            </p>
-        </span>
-    </li>
+﻿@using OddsNBits.Data.Entities
+<ol class="list-featured">
+    @foreach(var p in Posts)
+    {
+        <li>
+            <span>
+                <h6 class="font-weight-bold">
+                    <NavLink href="@($"/posts/{p.Slug}")" class="text-dark">@p.Title</NavLink>
+                </h6>
+                <p class="text-muted">
+                    @p.User.DisplayName in <NavLink href="@($"/categories/{p.Category.Slug}")">@p.Category.Name</NavLink>
+                </p>
+            </span>
+        </li>
+    }
+
 </ol>
 
 @code {
-
+    [Parameter, EditorRequired]
+    public BlogPost[] Posts { get; set; } = [];
 }

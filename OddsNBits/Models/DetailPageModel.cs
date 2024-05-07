@@ -16,18 +16,12 @@
 //     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // -------------------------------------------------------------------------------
 
-using System.Security.Claims;
-using System.Text.RegularExpressions;
+using OddsNBits.Data.Entities;
 
-namespace OddsNBits.Helpers;
+namespace OddsNBits.Models;
 
-public static class Extensions
+public record DetailPageModel(BlogPost? Post, BlogPost[] Related)
 {
-    public static string DisplayName(this ClaimsPrincipal principal) => principal.FindFirstValue(Globals.ClaimNames.DisplayName)!;
-    public static string UserId(this ClaimsPrincipal principal) => principal.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-    public static string Slugify(this string name) =>
-        Regex.Replace(name.ToLower(), @"[^a-z0-9_]+", "-", RegexOptions.Compiled, TimeSpan.FromSeconds(1)).Replace("--", "-").Trim('-');
-
-    public static string ShortDisplay(this DateTime? dateTime) => dateTime?.ToString("MMM dd") ?? string.Empty;
+    public static DetailPageModel Empty() => new(default, []);
+    public bool IsEmpty() => Post is null;
 }
