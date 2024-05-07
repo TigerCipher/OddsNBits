@@ -1,5 +1,8 @@
 ﻿@using System.ComponentModel.DataAnnotations
 @using System.Diagnostics
+@using System.Linq.Expressions
+@using Microsoft.AspNetCore.Components.CompilerServices
+@using Microsoft.AspNetCore.Components.Rendering
 @using OddsNBits.Data.Entities
 
 @rendermode InteractiveServer
@@ -16,40 +19,43 @@ Comments
     <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit>
 </EditForm>
 <hr />
-@foreach (var c in _comments)
+@foreach (var c in _comments.Take(_numberCommentsToShow + 2))
 {
     @if (!c.ParentCommentId.HasValue && !c.FirstLevelParentCommentId.HasValue)
     {
-        <div class="comment">
+        <div class="comment-header">
+            <div>@c.Content</div>
+            <div>By @c.User.DisplayName on @c.CreatedDate.ToShortDateString()</div>
+        </div>
 
-            <div class="comment-header">
-                <div>@c.Content</div>
-                <div>By @c.User.DisplayName on @c.CreatedDate.ToShortDateString()</div>
-            </div>
+        <HxButton OnClick="() => ShowReplyEditor(c.Id)" Icon="BootstrapIcon.ArrowReturnLeft">Reply</HxButton>
+    }
 
-            <HxButton OnClick="() => ShowReplyEditor(c.Id)" Icon="BootstrapIcon.ArrowReturnLeft">Reply</HxButton>
-
-
-            @if (c.Id == _replyId)
-            {
-                <div class="reply-editor">
-                    <EditForm Model="_model" OnValidSubmit="() => OnReply(c)">
-                        <DataAnnotationsValidator />
-                        <InputTextArea @bind-Value="_model.Comment" placeholder="Enter your reply" />
-                        <ValidationMessage For="() => _model.Comment" />
-                        <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit>
-                    </EditForm>
-                </div>
-            }
-
-            @if (_replies.ContainsKey(c) && _replies[c].Any())
-            {
-                @DisplayReplies(_replies[c])
-            }
-
-
+    @if (c.Id == _replyId && !c.ParentCommentId.HasValue && !c.FirstLevelParentCommentId.HasValue)
+    {
+        <div class="reply-editor">
+            <EditForm Model="_replyModel" OnValidSubmit="() => OnReply(c)">
+                <DataAnnotationsValidator />
+                <InputTextArea @bind-Value="_replyModel.Comment" placeholder="Enter your reply" />
+                <ValidationMessage For="() => _replyModel.Comment" />
+                <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit>
+            </EditForm>
         </div>
     }
+
+    @if (!c.ParentCommentId.HasValue && !c.FirstLevelParentCommentId.HasValue && _replies.ContainsKey(c) && _replies[c].Any())
+    {
+        <div class="replies">
+            @DisplayReplies(_replies[c])
+        </div>
+    }
+
+
+}
+
+@if (_comments.Count > _numberCommentsToShow)
+{
+    <HxButton Text="Load More" OnClick="LoadMore" />
 }
 
 @code {
@@ -63,19 +69,38 @@ Comments
 
     private int _replyId;
 
+    private int _numberCommentsToShow;
+    private int _numberCommentsLoaded;
+
     protected override async Task OnInitializedAsync()
     {
         if (!_comments.Any())
         {
             var list = await CommentService.GetAllAsync(BlogId);
             _comments = list.ToList();
-
+            _numberCommentsToShow = 8;
             foreach (var comment in _comments)
             {
-                var rlist = await CommentService.GetAllReplies(comment.Id);
-                _replies[comment] = rlist.ToList();
+                await PopulateRepliesAsync(comment);
             }
         }
+    }
+
+    private async Task PopulateRepliesAsync(Comment comment)
+    {
+        var rlist = await CommentService.GetAllReplies(comment.Id);
+        _replies[comment] = rlist.ToList();
+
+        foreach (var r in rlist)
+        {
+            await PopulateRepliesAsync(r);
+        }
+    }
+
+    private void LoadMore()
+    {
+        _numberCommentsToShow += 5;
+        StateHasChanged();
     }
 
     private async Task SubmitComment()
@@ -97,10 +122,15 @@ Comments
 
     private async Task OnReply(Comment parent)
     {
+        if (string.IsNullOrWhiteSpace(_replyModel.Comment))
+        {
+            _replyId = 0;
+            return;
+        }
         Comment cmt = new();
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var userid = authState.User.UserId();
-        cmt.Content = _model.Comment;
+        cmt.Content = _replyModel.Comment;
         await CommentService.AddNewReply(cmt, parent, userid, BlogId);
         NavigationManager.Refresh(true);
         _replyId = 0;
@@ -110,39 +140,39 @@ Comments
     {
         _replyId = commentId;
     }
-/*
+    /*
     private RenderFragment DisplayReplies(List<Comment> comments) => builder =>
     {
-        foreach (var c in comments)
+    foreach (var c in comments)
+    {
+    <div class="comment">
+    <div class="comment-header">
+    <div>@c.Content</div>
+    <div>By @c.User.DisplayName on @c.CreatedDate.ToShortDateString()</div>
+    </div>
+    <HxButton OnClick="() => ShowReplyEditor(c.Id)" Icon="BootstrapIcon.ArrowReturnLeft">Reply</HxButton>
+
+            @if (c.Id == _replyId)
+            {
+            <div class="reply-editor">
+            <EditForm Model="_model" OnValidSubmit="() => OnReply(c)">
+            <DataAnnotationsValidator/>
+            <InputTextArea @bind-Value="_model.Comment" placeholder="Enter your reply"/>
+    <ValidationMessage For="() => _model.Comment"/>
+    <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit>
+    </EditForm>
+    </div>
+    }
+
+    <!-- Recursive call for nested replies -->
+    @if (_replies.ContainsKey(c) && _replies[c].Any())
         {
-            <div class="comment">
-                <div class="comment-header">
-                    <div>@c.Content</div>
-                    <div>By @c.User.DisplayName on @c.CreatedDate.ToShortDateString()</div>
-                </div>
-                <HxButton OnClick="() => ShowReplyEditor(c.Id)" Icon="BootstrapIcon.ArrowReturnLeft">Reply</HxButton>
-
-                @if (c.Id == _replyId)
-                {
-                    <div class="reply-editor">
-                        <EditForm Model="_model" OnValidSubmit="() => OnReply(c)">
-                            <DataAnnotationsValidator/>
-                            <InputTextArea @bind-Value="_model.Comment" placeholder="Enter your reply"/>
-                            <ValidationMessage For="() => _model.Comment"/>
-                            <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit>
-                        </EditForm>
-                    </div>
-                }
-
-                <!-- Recursive call for nested replies -->
-                @if (_replies.ContainsKey(c) && _replies[c].Any())
-                {
-                    <div class="replies">
-                        @((DisplayReplies(_replies[c])))
-                    </div>
-                }
-            </div>
+        <div class="replies">
+        @((DisplayReplies(_replies[c])))
+        </div>
         }
+    </div>
+    }
     };
     */
 
@@ -150,8 +180,6 @@ Comments
     {
         foreach (var c in comments)
         {
-            builder.OpenElement(0, "div");
-            builder.AddAttribute(1, "class", "comment");
             builder.AddContent(2, RenderComment(c));
 
             // Recursive call for nested replies
@@ -163,51 +191,96 @@ Comments
                 builder.CloseElement();
             }
 
-            builder.CloseElement();
         }
     };
 
     // Helper method to render individual comment
     RenderFragment RenderComment(Comment comment) => builder =>
     {
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "comment-header");
-        builder.AddContent(2, $"<div>{comment.Content}</div>");
-        builder.AddContent(3, $"<div>By {comment.User.DisplayName} on {comment.CreatedDate.ToShortDateString()}</div>");
+        int sequence = 0;
+        builder.OpenElement(sequence++, "div");
+        builder.AddAttribute(sequence++, "class", "comment-header");
+        builder.OpenElement(sequence++, "div");
+        builder.AddContent(sequence++, $"{comment.Content}");
+        builder.CloseElement();
+        builder.OpenElement(sequence++, "div");
+        builder.AddContent(sequence++, $"By {comment.User.DisplayName} on {comment.CreatedDate.ToShortDateString()}");
+        builder.CloseElement();
+        builder.CloseElement(); // comment-header
 
         // Reply button
-        builder.OpenComponent<HxButton>(4);
-        builder.AddAttribute(5, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, () => ShowReplyEditor(comment.Id)));
-        builder.AddAttribute(6, "Icon", BootstrapIcon.ArrowReturnLeft);
-        builder.AddContent(7, "Reply");
+        builder.OpenComponent<HxButton>(sequence++);
+        builder.AddAttribute(sequence++, "Text", "Reply");
+        builder.AddAttribute(sequence++, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, () => ShowReplyEditor(comment.Id)));
+        builder.AddAttribute(sequence++, "Icon", BootstrapIcon.ArrowReturnLeft);
         builder.CloseComponent();
 
         // Reply editor
         if (comment.Id == _replyId)
         {
-            builder.OpenElement(8, "div");
-            builder.AddAttribute(9, "class", "reply-editor");
-            builder.AddContent(10, RenderReplyEditor(comment));
+            builder.OpenElement(sequence++, "div");
+            builder.AddAttribute(sequence++, "class", "reply-editor");
+            builder.AddContent(sequence++, RenderReplyEditor(comment));
             builder.CloseElement();
         }
 
-        builder.CloseElement();
+        // builder.CloseElement();
     };
+
 
     // Helper method to render reply editor
     RenderFragment RenderReplyEditor(Comment comment) => builder =>
     {
-        builder.OpenComponent<EditForm>(0);
-        builder.AddAttribute(1, "Model", _model);
-        builder.AddAttribute(2, "OnValidSubmit", EventCallback.Factory.Create<EditContext>(this, () => OnReply(comment)));
-        builder.AddContent(3, new MarkupString(@"<DataAnnotationsValidator/>
-                                                <InputTextArea @bind-Value=""_model.Comment"" placeholder=""Enter your reply""/>
-                                                <ValidationMessage For=""() => _model.Comment""/>
-                                                <HxSubmit Color=""ThemeColor.Success"">Submit</HxSubmit>"));
+        int sequence = 0;
+        builder.OpenComponent<EditForm>(sequence++);
+        builder.AddAttribute(sequence++, "Model", _replyModel);
+        builder.AddAttribute(sequence++, "OnValidSubmit", EventCallback.Factory.Create<EditContext>(this, () => OnReply(comment)));
+
+        // builder.AddContent(sequence++, new MarkupString(@"<DataAnnotationsValidator/>
+        //                                     <InputTextArea @bind-Value=""_model.Comment"" placeholder=""Enter your reply""/>
+        //                                     <ValidationMessage For=""() => _model.Comment""/>
+        //                                     <HxSubmit Color=""ThemeColor.Success"">Submit</HxSubmit>"));
+
+        // Open the EditForm section
+        builder.AddAttribute(sequence++, "ChildContent", (RenderFragment<EditContext>)((context) => (builder2) =>
+        {
+            // Add the DataAnnotationsValidator component
+            // builder2.OpenComponent<DataAnnotationsValidator>(sequence++);
+            // builder2.CloseComponent();
+
+            // Add the InputTextArea component
+            builder2.OpenComponent<InputTextArea>(sequence++);
+            builder2.AddComponentParameter(sequence++, "Value", RuntimeHelpers.TypeCheck(_replyModel.Comment));
+            builder2.AddComponentParameter(sequence++,
+                "ValueChanged",
+                RuntimeHelpers.TypeCheck(EventCallback.Factory.Create(this,
+                    RuntimeHelpers.CreateInferredEventCallback(this,
+                        value => _replyModel.Comment = value,
+                        _replyModel.Comment))));
+            builder2.AddComponentParameter(sequence++, "ValueExpression", RuntimeHelpers.TypeCheck<Expression<Func<string>>>(() => _replyModel.Comment));
+            // builder2.AddAttribute(sequence++, "Value", BindConverter.FormatValue(_model.Comment));
+            // builder2.AddAttribute(sequence++, "ValueChanged", EventCallback.Factory.Create<string>(this, value => _model.Comment = value));
+            builder2.AddAttribute(sequence++, "Placeholder", "Enter your reply");
+            builder2.CloseComponent();
+
+            // Add the ValidationMessage component
+            // builder2.OpenComponent<ValidationMessage<string>>(sequence++);
+            // builder2.AddComponentParameter(sequence++, "For", );
+            // builder2.CloseComponent();
+
+            // Add the HxSubmit component
+            builder2.OpenComponent<HxSubmit>(sequence++);
+            builder2.AddComponentParameter(sequence++, "Color", ThemeColor.Success);
+            builder2.AddComponentParameter(sequence++, "Text", "Submit");
+            builder2.CloseComponent();
+
+        }));
+
         builder.CloseComponent();
     };
 
     private readonly FormModel _model = new();
+    private readonly FormModel _replyModel = new();
 
     private class FormModel : ICloneable
     {
