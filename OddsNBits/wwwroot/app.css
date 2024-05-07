@@ -111,6 +111,42 @@ body {
     height: 100%;
 }
 
+.comment {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+.comment-header {
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+}
+
+.comment-header div {
+    margin-bottom: 5px;
+}
+
+.comment-header button {
+    background-color: transparent;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+    padding: 0;
+}
+
+.reply-editor {
+    margin-top: 10px;
+    padding-top: 10px;
+    margin-bottom: 30px;
+    border-top: 1px solid #eee;
+}
+
+.replies {
+    margin-left: 20px;
+    border-left: 1px solid #ccc;
+    padding-left: 20px;
+}
 
 /* .oddsnav { */
 /*     min-width: 50vw; */

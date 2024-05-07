@@ -1,30 +1,211 @@
 ﻿@using System.ComponentModel.DataAnnotations
 @using System.Diagnostics
+@using OddsNBits.Data.Entities
 
 @rendermode InteractiveServer
 
+@inject ICommentService CommentService;
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager NavigationManager;
+
 Comments
-<EditForm Model="_model" OnSubmit="SubmitComment">
+<EditForm Model="_model" OnValidSubmit="SubmitComment">
+    <DataAnnotationsValidator />
     <InputTextArea @bind-Value="_model.Comment" placeholder="Enter your comment" />
+    <ValidationMessage For="() => _model.Comment" />
     <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit>
 </EditForm>
 <hr />
-@if (_displayComment)
+@foreach (var c in _comments)
 {
-    <p>@_model.Comment</p>
+    @if (!c.ParentCommentId.HasValue && !c.FirstLevelParentCommentId.HasValue)
+    {
+        <div class="comment">
+
+            <div class="comment-header">
+                <div>@c.Content</div>
+                <div>By @c.User.DisplayName on @c.CreatedDate.ToShortDateString()</div>
+            </div>
+
+            <HxButton OnClick="() => ShowReplyEditor(c.Id)" Icon="BootstrapIcon.ArrowReturnLeft">Reply</HxButton>
+
+
+            @if (c.Id == _replyId)
+            {
+                <div class="reply-editor">
+                    <EditForm Model="_model" OnValidSubmit="() => OnReply(c)">
+                        <DataAnnotationsValidator />
+                        <InputTextArea @bind-Value="_model.Comment" placeholder="Enter your reply" />
+                        <ValidationMessage For="() => _model.Comment" />
+                        <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit>
+                    </EditForm>
+                </div>
+            }
+
+            @if (_replies.ContainsKey(c) && _replies[c].Any())
+            {
+                @DisplayReplies(_replies[c])
+            }
+
+
+        </div>
+    }
 }
 
 @code {
-    private bool _displayComment = false;
+
+    [Parameter, EditorRequired]
+    public int BlogId { get; set; }
 
 
-    private void SubmitComment()
+    private List<Comment> _comments = new();
+    private Dictionary<Comment, List<Comment>> _replies = new();
+
+    private int _replyId;
+
+    protected override async Task OnInitializedAsync()
     {
-        _displayComment = true;
-        Debug.WriteLine("COMMENT SUBMITTED");
-        // TODO
-        StateHasChanged();
+        if (!_comments.Any())
+        {
+            var list = await CommentService.GetAllAsync(BlogId);
+            _comments = list.ToList();
+
+            foreach (var comment in _comments)
+            {
+                var rlist = await CommentService.GetAllReplies(comment.Id);
+                _replies[comment] = rlist.ToList();
+            }
+        }
     }
+
+    private async Task SubmitComment()
+    {
+        // try
+        // {
+        Comment cmt = new();
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userid = authState.User.UserId();
+
+        cmt.Content = _model.Comment;
+        await CommentService.AddNewAsync(cmt, userid, BlogId);
+
+        NavigationManager.Refresh(true);
+        // }catch(Exception ex)
+        // {
+        // }
+    }
+
+    private async Task OnReply(Comment parent)
+    {
+        Comment cmt = new();
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userid = authState.User.UserId();
+        cmt.Content = _model.Comment;
+        await CommentService.AddNewReply(cmt, parent, userid, BlogId);
+        NavigationManager.Refresh(true);
+        _replyId = 0;
+    }
+
+    private void ShowReplyEditor(int commentId)
+    {
+        _replyId = commentId;
+    }
+/*
+    private RenderFragment DisplayReplies(List<Comment> comments) => builder =>
+    {
+        foreach (var c in comments)
+        {
+            <div class="comment">
+                <div class="comment-header">
+                    <div>@c.Content</div>
+                    <div>By @c.User.DisplayName on @c.CreatedDate.ToShortDateString()</div>
+                </div>
+                <HxButton OnClick="() => ShowReplyEditor(c.Id)" Icon="BootstrapIcon.ArrowReturnLeft">Reply</HxButton>
+
+                @if (c.Id == _replyId)
+                {
+                    <div class="reply-editor">
+                        <EditForm Model="_model" OnValidSubmit="() => OnReply(c)">
+                            <DataAnnotationsValidator/>
+                            <InputTextArea @bind-Value="_model.Comment" placeholder="Enter your reply"/>
+                            <ValidationMessage For="() => _model.Comment"/>
+                            <HxSubmit Color="ThemeColor.Success">Submit</HxSubmit>
+                        </EditForm>
+                    </div>
+                }
+
+                <!-- Recursive call for nested replies -->
+                @if (_replies.ContainsKey(c) && _replies[c].Any())
+                {
+                    <div class="replies">
+                        @((DisplayReplies(_replies[c])))
+                    </div>
+                }
+            </div>
+        }
+    };
+    */
+
+    RenderFragment DisplayReplies(List<Comment> comments) => builder =>
+    {
+        foreach (var c in comments)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "comment");
+            builder.AddContent(2, RenderComment(c));
+
+            // Recursive call for nested replies
+            if (_replies.ContainsKey(c) && _replies[c].Any())
+            {
+                builder.OpenElement(3, "div");
+                builder.AddAttribute(4, "class", "replies");
+                builder.AddContent(5, DisplayReplies(_replies[c]));
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
+        }
+    };
+
+    // Helper method to render individual comment
+    RenderFragment RenderComment(Comment comment) => builder =>
+    {
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "comment-header");
+        builder.AddContent(2, $"<div>{comment.Content}</div>");
+        builder.AddContent(3, $"<div>By {comment.User.DisplayName} on {comment.CreatedDate.ToShortDateString()}</div>");
+
+        // Reply button
+        builder.OpenComponent<HxButton>(4);
+        builder.AddAttribute(5, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, () => ShowReplyEditor(comment.Id)));
+        builder.AddAttribute(6, "Icon", BootstrapIcon.ArrowReturnLeft);
+        builder.AddContent(7, "Reply");
+        builder.CloseComponent();
+
+        // Reply editor
+        if (comment.Id == _replyId)
+        {
+            builder.OpenElement(8, "div");
+            builder.AddAttribute(9, "class", "reply-editor");
+            builder.AddContent(10, RenderReplyEditor(comment));
+            builder.CloseElement();
+        }
+
+        builder.CloseElement();
+    };
+
+    // Helper method to render reply editor
+    RenderFragment RenderReplyEditor(Comment comment) => builder =>
+    {
+        builder.OpenComponent<EditForm>(0);
+        builder.AddAttribute(1, "Model", _model);
+        builder.AddAttribute(2, "OnValidSubmit", EventCallback.Factory.Create<EditContext>(this, () => OnReply(comment)));
+        builder.AddContent(3, new MarkupString(@"<DataAnnotationsValidator/>
+                                                <InputTextArea @bind-Value=""_model.Comment"" placeholder=""Enter your reply""/>
+                                                <ValidationMessage For=""() => _model.Comment""/>
+                                                <HxSubmit Color=""ThemeColor.Success"">Submit</HxSubmit>"));
+        builder.CloseComponent();
+    };
 
     private readonly FormModel _model = new();
 

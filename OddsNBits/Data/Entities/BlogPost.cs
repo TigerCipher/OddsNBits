@@ -42,6 +42,6 @@ namespace OddsNBits.Data.Entities
         public virtual Category Category { get; set; }
         public virtual ApplicationUser User { get; set; }
 
-        // TODO: Array of comment IDs?
+        // public ICollection<Comment> Comments { get; set; }
     }
 }

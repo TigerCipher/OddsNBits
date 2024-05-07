@@ -1,4 +1,4 @@
-// -------------------------------------------------------------------------------
+﻿// -------------------------------------------------------------------------------
 //     OddsNBits - A Blazor Web App serving as my dev log / blog site
 //     Copyright (C) 2024  Matt Rogers
 // 
@@ -15,16 +15,23 @@
 //     You should have received a copy of the GNU General Public License
 //     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // -------------------------------------------------------------------------------
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using OddsNBits.Data.Entities;
 
-namespace OddsNBits.Data
+namespace OddsNBits.Data.Entities;
+
+public class Comment
 {
-    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
-    {
-        public DbSet<Category> Categories { get; set; }
-        public DbSet<BlogPost> BlogPosts { get; set; }
-        public DbSet<Comment> Comments { get; set; }
-    }
+    public int Id { get; set; }
+    public string Content { get; set; }
+    public DateTime CreatedDate { get; set; }
+
+    public int BlogPostId { get; set; }
+    public BlogPost BlogPost { get; set; }
+
+    public string UserId { get; set; }
+    public ApplicationUser User { get; set; }
+
+    public int? ParentCommentId { get; set; }
+    public int? FirstLevelParentCommentId { get; set; }
+    // public Comment ParentComment { get; set; }
+    // public ICollection<Comment> Replies{ get; set; }
 }

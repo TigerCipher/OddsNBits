@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OddsNBits.Data;
 
@@ -11,9 +12,11 @@ using OddsNBits.Data;
 namespace OddsNBits.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240506221303_AddedUserIDToComment")]
+    partial class AddedUserIDToComment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -335,9 +338,6 @@ namespace OddsNBits.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("FirstLevelParentCommentId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("ParentCommentId")
                         .HasColumnType("int");
 
@@ -348,6 +348,8 @@ namespace OddsNBits.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BlogPostId");
+
+                    b.HasIndex("ParentCommentId");
 
                     b.HasIndex("UserId");
 
@@ -427,10 +429,14 @@ namespace OddsNBits.Migrations
             modelBuilder.Entity("OddsNBits.Data.Entities.Comment", b =>
                 {
                     b.HasOne("OddsNBits.Data.Entities.BlogPost", "BlogPost")
-                        .WithMany()
+                        .WithMany("Comments")
                         .HasForeignKey("BlogPostId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("OddsNBits.Data.Entities.Comment", "ParentComment")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentCommentId");
 
                     b.HasOne("OddsNBits.Data.ApplicationUser", "User")
                         .WithMany()
@@ -440,7 +446,19 @@ namespace OddsNBits.Migrations
 
                     b.Navigation("BlogPost");
 
+                    b.Navigation("ParentComment");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("OddsNBits.Data.Entities.BlogPost", b =>
+                {
+                    b.Navigation("Comments");
+                });
+
+            modelBuilder.Entity("OddsNBits.Data.Entities.Comment", b =>
+                {
+                    b.Navigation("Replies");
                 });
 #pragma warning restore 612, 618
         }
