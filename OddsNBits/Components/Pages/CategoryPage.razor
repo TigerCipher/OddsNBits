@@ -1,0 +1,98 @@
+﻿@page "/categories/{Slug}"
+@using OddsNBits.Data.Entities
+
+
+@inject IPostService PostService
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+
+<PageTitle>@_category?.Name | Odds &amp; Bits</PageTitle>
+
+<!--------------------------------------
+Main
+--------------------------------------->
+<div class="container mt-5 mb-5">
+    <div class="row">
+        @if (!_hasNoPosts)
+        {
+            <NavLink href="/">
+                <HxAlert Color="ThemeColor.Primary" CssClass="text-center">There are no posts in this category yet, come back later. Click here to return home</HxAlert>
+            </NavLink>
+        }
+        else
+        {
+            <div class="col-md-8">
+                @if (_featured is not null)
+                {
+                    <h5 class="font-weight-bold spanborder"><span>Featured in @_category?.Name</span></h5>
+                    <div class="card border-0 mb-5 box-shadow">
+                        <div style="background-image: url(@_featured.Image); height: 350px; background-size: cover; background-repeat: no-repeat;">
+                        </div>
+                        <div class="card-body px-0 pb-0 d-flex flex-column align-items-start">
+                            <h2 class="h2 font-weight-bold">
+                                <NavLink class="text-dark" href=@($"/posts/{_featured.Slug}")>@_featured.Title</NavLink>
+                            </h2>
+                            <p class="card-text">
+                                @_featured.Introduction
+                            </p>
+                            <div>
+                                <small class="d-block">
+                                    <p class="text-muted">@_featured.User.DisplayName</p>
+                                </small>
+                                <small class="text-muted">@_featured.PublishedOn.ShortDisplay()</small>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <h5 class="font-weight-bold spanborder"><span>Latest</span></h5>
+                <BlogList Posts="_latest" />
+            </div>
+            <div class="col-md-4 pl-4">
+                <div class="sticky-top">
+                    <h5 class="font-weight-bold spanborder"><span>Popular in @_category?.Name</span></h5>
+                    <RankedList Posts="_popular" />
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@*<div class="container pt-4 pb-4">
+    <SubscribeForm/>
+</div>*@
+<!-- End Main -->
+@code {
+    [Parameter]
+    public string Slug { get; set; }
+
+    private BlogPost? _featured;
+    private BlogPost[] _latest = [];
+    private BlogPost[] _popular = [];
+
+    private Category _category;
+
+    private bool _hasNoPosts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var cat = await CategoryService.GetBySlugAsync(Slug);
+        if (cat is null)
+        {
+            NavigationManager.NavigateTo("/", replace: true);
+            return;
+        }
+
+        _category = cat;
+
+        var posts = await Task.WhenAll(
+            PostService.GetFeaturedAsync(1, cat.Id),
+            PostService.GetLatestAsync(5, cat.Id),
+            PostService.GetPopularAsync(4, cat.Id)
+        );
+        _featured = posts[0].FirstOrDefault();
+        _latest = posts[1];
+        _popular = posts[2];
+
+        _hasNoPosts = _latest.Any();
+    }
+}

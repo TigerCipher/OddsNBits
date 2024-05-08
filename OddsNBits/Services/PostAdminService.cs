@@ -145,13 +145,22 @@ public class PostAdminService : IPostAdminService
                 var dbpost = await ctx.BlogPosts.FindAsync(post.Id);
                 if (dbpost != null)
                 {
+
+                    if (dbpost.Title != post.Title ||
+                       dbpost.Introduction != post.Introduction ||
+                       dbpost.Content != post.Content ||
+                       dbpost.Image != post.Image)
+                    {
+                        dbpost.ModifiedOn = DateTime.UtcNow;
+                    }
+
                     dbpost.Title = post.Title;
                     dbpost.IsFeatured = post.IsFeatured;
                     dbpost.Introduction = post.Introduction;
                     dbpost.Content = post.Content;
                     dbpost.CategoryId = post.CategoryId;
                     dbpost.Image = post.Image;
-                    dbpost.ModifiedOn = DateTime.UtcNow;
+
 
                     if (post.IsPublished && !dbpost.IsPublished)
                     {

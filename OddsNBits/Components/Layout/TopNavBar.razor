@@ -14,7 +14,7 @@
             <HxNavLink Href="/">Home</HxNavLink>
             @foreach(var c in _categories)
             {
-                <HxNavLink Href="@c.Slug">@c.Name</HxNavLink>
+                <HxNavLink Href=@($"/categories/{c.Slug}")>@c.Name</HxNavLink>
             }
             @* <HxDropdown> *@
             @*     <HxDropdownToggleElement ElementName="a" Caret="true" role="button">Categories</HxDropdownToggleElement> *@

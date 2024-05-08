@@ -63,6 +63,10 @@
                 <article class="article-post">
                     @((MarkupString)_post.Content)
                 </article>
+                @if(_post.ModifiedOn is not null)
+                {
+                    <p>Last modified on @_post.ModifiedOn?.ToLongDateString()</p>
+                }
                 @*<SubscribeForm />*@
             </div>
         </div>
