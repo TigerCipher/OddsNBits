@@ -8,7 +8,7 @@
                 <div style="background-image: url(@_first.Image); height: 150px;    background-size: cover;    background-repeat: no-repeat;"></div>
                 <div class="card-body px-0 pb-0 d-flex flex-column align-items-start">
                     <h2 class="h4 font-weight-bold">
-                        <NavLink class="text-dark" href="@($"/posts/{_first.Slug}")">@_first.Title</NavLink>
+                        <NavLink class="text-dark" href="@($"/posts/{_first.Slug}")" data-enhance-nav="false">@_first.Title</NavLink>
                     </h2>
                     <p class="card-text">
                         @_first.Introduction
@@ -28,7 +28,7 @@
                         <img height="80" src="@p.Image">
                         <div class="pl-3">
                             <h2 class="mb-2 h6 font-weight-bold">
-                                <NavLink class="text-dark" href=@($"/posts/{p.Slug}")>@p.Title</NavLink>
+                                <NavLink class="text-dark" href=@($"/posts/{p.Slug}") data-enhance-nav="false">@p.Title</NavLink>
                             </h2>
                             <div class="card-text text-muted small">
                                 @p.User.DisplayName in <NavLink href="@($"/categories/{p.Category.Slug}")">@p.Category.Name</NavLink>

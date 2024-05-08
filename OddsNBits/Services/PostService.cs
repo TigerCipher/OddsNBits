@@ -130,7 +130,7 @@ public class PostService : IPostService
 
             var relatedPosts = await context.BlogPosts.AsNoTracking()
                 .Include(b => b.Category).Include(b => b.User)
-                .Where(b => b.CategoryId == post.CategoryId && b.IsPublished)
+                .Where(b => b.CategoryId == post.CategoryId && b.IsPublished && b.Slug != slug)
                 .OrderBy(_ => Guid.NewGuid())
                 .Take(count).ToArrayAsync();
 
