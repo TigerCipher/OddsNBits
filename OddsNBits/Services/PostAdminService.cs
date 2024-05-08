@@ -94,6 +94,7 @@ public class PostAdminService : IPostAdminService
                 e => filter.CreationDate.StartDate <= e.CreatedOn && e.CreatedOn < filter.CreationDate.EndDate!.Value.AddDays(1))
             .WhereIf(filter.ShowOnlyFeatured, e => e.IsFeatured)
             .WhereIf(filter.ShowOnlyPublished, e => e.IsPublished)
+            .WhereIf(filter.ShowOnlyMainFeature, e => e.IsMainFeature)
             .Skip(startIndex)
             .Take(pageSize)
             .ToArray();

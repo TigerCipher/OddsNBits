@@ -30,6 +30,7 @@
         <HxInputDateRange @bind-Value="filterCtx.CreationDate" Label="Creation Date Range" CalendarIcon="BootstrapIcon.Calendar" />
         <HxCheckbox Text="Show only published posts" @bind-Value="filterCtx.ShowOnlyPublished" />
         <HxCheckbox Text="Show only featured posts" @bind-Value="filterCtx.ShowOnlyFeatured" />
+        <HxCheckbox Text="Show only the main feature post" @bind-Value="filterCtx.ShowOnlyMainFeature" />
     </FilterTemplate>
     <DataTemplate>
         <HxGrid @ref="_gridComponent" TItem="BlogPost" DataProvider="GetGridData" Striped="true"
@@ -265,7 +266,8 @@
         post.IsMainFeature = true;
         await PostService.SaveAsync(post, post.UserId);
         _isLoading = false;
-        NavigationManager.Refresh(true);
+        NavigationManager.Refresh();
+        StateHasChanged();
     }
 
 }

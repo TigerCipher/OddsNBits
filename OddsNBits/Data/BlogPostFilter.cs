@@ -26,4 +26,5 @@ public class BlogPostFilter
     public DateTimeRange CreationDate { get; set; }
     public bool ShowOnlyPublished { get; set; }
     public bool ShowOnlyFeatured { get; set; }
+    public bool ShowOnlyMainFeature { get; set; }
 }
