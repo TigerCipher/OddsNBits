@@ -1,6 +1,7 @@
 ﻿@using System.ComponentModel.DataAnnotations
 @using System.Diagnostics
 @using System.Linq.Expressions
+@using System.Web
 @using Microsoft.AspNetCore.Components.CompilerServices
 @using Microsoft.AspNetCore.Components.Rendering
 @using OddsNBits.Data.Entities
@@ -25,7 +26,15 @@ Comments
         <div>@c.Content</div>
         <div class="d-flex justify-content-start">
             <div class="mr-3">
-                By @c.User.DisplayName on @c.CreatedDate.ToShortDateString()
+                @if (!string.IsNullOrWhiteSpace(c.User.Image))
+                {
+                    <img class="rounded-circle px-2" src="@c.User.Image" width="50">
+                }
+                else
+                {
+                    <img class="rounded-circle px-2" src="@($"https://ui-avatars.com/api/?name={HttpUtility.UrlEncode(c.User.DisplayName)}&background=random")" width="50">
+                }
+                @c.User.DisplayName on @c.CreatedDate.ToShortDateString()
             </div>
             <div>
                 <HxButton OnClick="() => ShowReplyEditor(c.Id)" Icon="BootstrapIcon.ArrowReturnLeft">Reply</HxButton>
@@ -58,7 +67,7 @@ Comments
 
 @if (_comments.Count > _numberCommentsToShow)
 {
-    <HxButton Color="ThemeColor.Link" Text="Load More" OnClick="LoadMore" CssClass="mt-3" Outline="true"/>
+    <HxButton Color="ThemeColor.Link" Text="Load More" OnClick="LoadMore" CssClass="mt-3" Outline="true" />
 }
 
 @code {
@@ -188,7 +197,26 @@ Comments
         builder.AddAttribute(sequence++, "class", "d-flex justify-content-start");
         builder.OpenElement(sequence++, "div"); // <div class="mr-3">
         builder.AddAttribute(sequence++, "class", "mr-3");
-        builder.AddContent(sequence++, $"By {comment.User.DisplayName} on {comment.CreatedDate.ToShortDateString()}");
+
+        /*
+         *                @if (!string.IsNullOrWhiteSpace(c.User.Image))
+           {
+               <img class="rounded-circle" src="@c.User.Image" width="70">
+           }
+           else
+           {
+               <img class="rounded-circle" src="@($"https://ui-avatars.com/api/?name={HttpUtility.UrlEncode(c.User.DisplayName)}&background=random")" width="70">
+           }
+         */
+        builder.OpenElement(sequence++, "img");
+        builder.AddAttribute(sequence++, "class", "rounded-circle px-2");
+        builder.AddAttribute(sequence++, "width", "50");
+        builder.AddAttribute(sequence++, "src", !string.IsNullOrWhiteSpace(comment.User.Image) ?
+            comment.User.Image :
+            $"https://ui-avatars.com/api/?name={HttpUtility.UrlEncode(comment.User.DisplayName)}&background=random");
+        builder.CloseElement();
+
+        builder.AddContent(sequence++, $" {comment.User.DisplayName} on {comment.CreatedDate.ToShortDateString()}");
         builder.CloseElement(); // inner mr-3 div
         builder.OpenElement(sequence++, "div"); // <div>
 

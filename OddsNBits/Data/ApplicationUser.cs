@@ -25,6 +25,8 @@ namespace OddsNBits.Data
     {
         [Required, MaxLength(35)]
         public string DisplayName { get; set; }
+
+        public string? Image { get; set; }
     }
 
 }

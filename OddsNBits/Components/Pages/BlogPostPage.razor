@@ -1,4 +1,5 @@
 ﻿@page "/posts/{Slug}"
+@using System.Web
 @using OddsNBits.Data.Entities
 
 @* @rendermode InteractiveServer *@
@@ -31,7 +32,14 @@
                             @_post.Introduction
                         </p>
                         <div class="d-flex align-items-center">
-                            <img class="rounded-circle" src="img/demo/avatar2.jpg" width="70">
+                            @if (!string.IsNullOrWhiteSpace(_post.User.Image))
+                            {
+                                <img class="rounded-circle" src="@_post.User.Image" width="70">
+                            }
+                            else
+                            {
+                                <img class="rounded-circle" src="@($"https://ui-avatars.com/api/?name={HttpUtility.UrlEncode(_post.User.DisplayName)}&background=random")" width="70">
+                            }
                             <small class="ml-2">
                                 @_post.User.DisplayName
                                 <span class="text-muted d-block">@_post.PublishedOn?.ToLongDateString()</span>

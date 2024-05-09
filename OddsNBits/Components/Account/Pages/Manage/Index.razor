@@ -10,6 +10,9 @@
 @inject IdentityUserAccessor UserAccessor
 @inject IdentityRedirectManager RedirectManager
 
+@inject IWebHostEnvironment WebHost
+@inject IHxMessengerService Messenger
+
 <PageTitle>Profile</PageTitle>
 
 <h3>Profile</h3>
@@ -17,7 +20,7 @@
 
 <div class="row">
     <div class="col-md-6">
-        <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
+        <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post" enctype="multipart/form-data">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
             <div class="form-floating mb-3">
@@ -28,6 +31,18 @@
                 <InputText @bind-Value="Input.DisplayName" class="form-control" placeholder="Your Name" />
                 <label for="display-name" class="form-label">Display Name</label>
                 <ValidationMessage For="() => Input.DisplayName" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                @if (_user is not null && !string.IsNullOrWhiteSpace(_user.Image))
+                {
+                    <div class="mb-3">
+                        <img src="@_user.Image" style="height: 200px" />
+                    </div>
+                }
+                <div class="mb-3">
+                    <label class="form-label d-block">Upload Profile Image</label>
+                    <InputFile name="Input.Image" />
+                </div>
             </div>
             @* <div class="form-floating mb-3"> *@
             @*     <InputText @bind-Value="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." /> *@
@@ -50,6 +65,7 @@
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,9 +99,95 @@
             }
         }
 
+
+        if (Input.Image is not null)
+        {
+            var url = await SaveFileAsync(Input.Image);
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                Messenger.AddError("Image url was null");
+                return;
+            }
+            if(!string.IsNullOrWhiteSpace(_user.Image))
+            {
+                DeleteImage(_user.Image);
+            }
+
+            _user.Image = url;
+
+            var result = await UserManager.UpdateAsync(_user);
+            if(!result.Succeeded)
+            {
+                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set profile image.", HttpContext);
+            }
+        }else
+        {
+            Debug.WriteLine($"[WARNING] Image file was null");
+        }
+
+
+
         // TODO: Need to update the display name gotten from claims principle for purpose of the nav bar profile link
         await SignInManager.RefreshSignInAsync(_user);
         RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
+    }
+
+    // private async Task HandleFileUploadAsync(InputFileChangeEventArgs e)
+    // {
+    //     await PreviewImageAsync(e.File);
+    //     _imageFile = e.File;
+    // }
+    //
+    // private async Task PreviewImageAsync(IBrowserFile file)
+    // {
+    //     await using var imgStream = file.OpenReadStream();
+    //     using MemoryStream memStream = new();
+    //     await imgStream.CopyToAsync(memStream);
+    //     Debug.WriteLine($"File type: {file.ContentType}");
+    //     // data:image/type;base64,fijgofd_content_jnfdgjdfg
+    //     _imageUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(memStream.ToArray())}";
+    // }
+
+    private void DeleteImage(string imageUrl)
+    {
+        var imgPath = imageUrl.Replace('/', '\\');
+        var fullpath = Path.Combine(WebHost.WebRootPath, imgPath);
+        try
+        {
+            File.Delete(fullpath);
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine($"[WARNING] Failed to delete image: {imageUrl} from {fullpath}");
+        }
+    }
+
+    private async Task<string?> SaveFileAsync(IFormFile file)
+    {
+        var trustedName = Path.GetRandomFileName();
+        var ext = Path.GetExtension(file.FileName);
+        // wwwroot\img\users
+        var destination = Path.Combine(WebHost.WebRootPath, "img", "users");
+        Directory.CreateDirectory(destination);
+
+        var filename = Path.Combine("img", "users", trustedName + ext);
+
+        var fullpath = Path.Combine(WebHost.WebRootPath, filename);
+
+        await using FileStream fs = new(fullpath, FileMode.Create);
+        try
+        {
+            await file.OpenReadStream().CopyToAsync(fs);
+
+            return filename.Replace('\\', '/');
+        }
+        catch (Exception ex)
+        {
+            Messenger.AddError(title: "Failed to save image file!", message: ex.Message);
+            fs.Close();
+
+            return null;
+        }
     }
 
     private sealed class InputModel
@@ -98,5 +200,7 @@
         [StringLength(30, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 5)]
         [Display(Name = "Display Name")]
         public string? DisplayName { get; set; }
+
+        public IFormFile? Image { get; set; }
     }
 }
