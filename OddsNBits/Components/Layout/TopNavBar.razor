@@ -1,5 +1,6 @@
 ﻿@using System.Diagnostics
 @using System.ComponentModel.DataAnnotations
+@using System.Web
 @using OddsNBits.Data.Entities
 @implements IDisposable
 
@@ -44,6 +45,14 @@
                         <HxIcon Icon="@BootstrapIcon.Briefcase"/> Dashboard
                     </HxNavLink>
                     <HxNavLink Href="Account/Manage">
+                        @if (!string.IsNullOrWhiteSpace(context.User.ProfileImage()))
+                        {
+                            <img class="rounded-circle px-2" src="@context.User.ProfileImage()" width="50">
+                        }
+                        else
+                        {
+                            <img class="rounded-circle px-2" src="@($"https://ui-avatars.com/api/?name={HttpUtility.UrlEncode(context.User.DisplayName())}&background=random")" width="50">
+                        }
                         <HxIcon Icon="@BootstrapIcon.Person"/> @context.User.DisplayName()
                     </HxNavLink>
                     @* <NavLink Href="Account/Manage"> *@

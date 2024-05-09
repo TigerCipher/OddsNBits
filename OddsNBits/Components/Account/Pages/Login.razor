@@ -142,7 +142,7 @@
             return;
         }
 
-        Claim[] claims = [new Claim(Globals.ClaimNames.DisplayName, user.DisplayName)];
+        Claim[] claims = [new Claim(Globals.ClaimNames.DisplayName, user.DisplayName), new Claim(Globals.ClaimNames.Image, user.Image ?? string.Empty)];
         await SignInManager.SignInWithClaimsAsync(user, Input.RememberMe, claims);
 
         Logger.LogInformation("User logged in.");

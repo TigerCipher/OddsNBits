@@ -25,6 +25,7 @@ public static class Extensions
 {
     public static string DisplayName(this ClaimsPrincipal principal) => principal.FindFirstValue(Globals.ClaimNames.DisplayName)!;
     public static string UserId(this ClaimsPrincipal principal) => principal.FindFirstValue(ClaimTypes.NameIdentifier)!;
+    public static string ProfileImage(this ClaimsPrincipal principal) => principal.FindFirstValue(Globals.ClaimNames.Image)!;
 
     public static string Slugify(this string name) =>
         Regex.Replace(name.ToLower(), @"[^a-z0-9_]+", "-", RegexOptions.Compiled, TimeSpan.FromSeconds(1)).Replace("--", "-").Trim('-');

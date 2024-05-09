@@ -22,6 +22,7 @@ namespace OddsNBits
         public static class ClaimNames
         {
             public const string DisplayName = "DisplayName";
+            public const string Image = "Image";
         }
     }
 }
