@@ -31,4 +31,8 @@
         <_ContentIncludedByDefault Remove="Components\Layout\AdminLayout.razor" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="wwwroot\js\qrcode\" />
+    </ItemGroup>
+
 </Project>

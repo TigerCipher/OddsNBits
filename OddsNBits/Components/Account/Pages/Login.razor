@@ -116,6 +116,7 @@
     //     }
     // }
 
+
     private async Task LoginAsync()
     {
         var user = await UserManager.FindByEmailAsync(Input.Email);
@@ -124,8 +125,10 @@
             errorMessage = "Error: Invalid login attempt. Unknown Email.";
             return;
         }
-
-        var result = await SignInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
+        // SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        // var twoFactor = await SignInManager.IsTwoFactorEnabledAsync(user);
+        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        // var result = await SignInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
         if (result.RequiresTwoFactor)
         {
             RedirectManager.RedirectTo(
@@ -141,9 +144,9 @@
             errorMessage = "Error: Invalid login attempt. Incorrect password.";
             return;
         }
-
         Claim[] claims = [new Claim(Globals.ClaimNames.DisplayName, user.DisplayName), new Claim(Globals.ClaimNames.Image, user.Image ?? string.Empty)];
-        await SignInManager.SignInWithClaimsAsync(user, Input.RememberMe, claims);
+        // await SignInManager.SignInWithClaimsAsync(user, Input.RememberMe, claims);
+        await UserManager.AddClaimsAsync(user, claims);
 
         Logger.LogInformation("User logged in.");
         RedirectManager.RedirectTo(ReturnUrl);

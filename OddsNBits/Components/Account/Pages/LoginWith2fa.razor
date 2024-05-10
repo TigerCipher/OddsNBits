@@ -1,6 +1,7 @@
 ﻿@page "/Account/LoginWith2fa"
 
 @using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
 @using Microsoft.AspNetCore.Identity
 @using OddsNBits.Data
 
@@ -72,6 +73,10 @@
 
         if (result.Succeeded)
         {
+            Claim[] claims = [new Claim(Globals.ClaimNames.DisplayName, user.DisplayName), new Claim(Globals.ClaimNames.Image, user.Image ?? string.Empty)];
+            // await SignInManager.SignInWithClaimsAsync(user, Input.RememberMe, claims);
+            await UserManager.AddClaimsAsync(user, claims);
+
             Logger.LogInformation("User with ID '{UserId}' logged in with 2fa.", userId);
             RedirectManager.RedirectTo(ReturnUrl);
         }
