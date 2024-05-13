@@ -1,0 +1,72 @@
+﻿@page "/categories/{Slug}/all"
+@page "/categories/{Slug}/all/page-{PageNumber:int}"
+
+@using OddsNBits.Data.Entities
+
+@inject IPostService PostService
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+
+<div class="container mt-5 mb-5">
+    <div class="row">
+        @if (!_hasNoPosts)
+        {
+            <NavLink href="/">
+                <HxAlert Color="ThemeColor.Primary" CssClass="text-center">There are no posts in this category yet, come back later. Click here to return home</HxAlert>
+            </NavLink>
+        }
+        else
+        {
+            <div class="col-md-8">
+                <h5 class="font-weight-bold spanborder"><span>@_category?.Name Posts</span></h5>
+                <BlogList Posts="_posts"/>
+            </div>
+            <div class="col-md-4 pl-4">
+                <div class="sticky-top">
+                    <h5 class="font-weight-bold spanborder"><span>Popular in @_category?.Name</span></h5>
+                    <RankedList Posts="_popular" />
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Slug { get; set; }
+
+    [Parameter]
+    public int PageNumber { get; set; }
+
+    private Category _category;
+
+    private BlogPost[] _posts = [];
+    private BlogPost[] _popular = [];
+
+    private int _pageIndex = 0;
+    private const int PageSize = 5;
+
+    private bool _hasNoPosts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var cat = await CategoryService.GetBySlugAsync(Slug);
+        if (cat is null)
+        {
+            NavigationManager.NavigateTo("/", replace: true);
+            return;
+        }
+
+        _category = cat;
+
+        var posts = await Task.WhenAll(
+            PostService.GetPopularAsync(5, cat.Id),
+            PostService.GetPostsAsync(_pageIndex, PageSize, cat.Id)
+        );
+        _popular = posts[0];
+        _posts = posts[1];
+
+        _hasNoPosts = _posts.Any();
+    }
+
+}

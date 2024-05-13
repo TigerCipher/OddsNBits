@@ -26,6 +26,7 @@ namespace OddsNBits.Services;
 public interface IPostService
 {
     Task<BlogPost[]> GetFeaturedAsync(int count, int categoryId = 0);
+    Task<BlogPost[]> GetPostsAsync(int pageIndex, int pageSize, int categoryId = 0);
     Task<BlogPost[]> GetPopularAsync(int count, int categoryId = 0);
     Task<BlogPost[]> GetLatestAsync(int count, int categoryId = 0);
     Task<DetailPageModel> GetBySlugAsync(string slug, int count = 4);
@@ -60,17 +61,23 @@ public class PostService : IPostService
                 query = query.Where(c => c.CategoryId == categoryId);
             }
 
-            var result = await query.Where(b=>b.IsFeatured && !b.IsMainFeature).OrderBy(_ => Guid.NewGuid()).Take(count).ToArrayAsync();
-            if(result.Length < count)
+            var result = await query.Where(b => b.IsFeatured && !b.IsMainFeature).OrderBy(_ => Guid.NewGuid())
+                .Take(count).ToArrayAsync();
+            if (result.Length < count)
             {
                 // not enough featured posts
-                var fillers = await query.Where(b => !b.IsFeatured && !b.IsMainFeature).OrderBy(_ => Guid.NewGuid()).Take(count - result.Length).ToArrayAsync();
+                var fillers = await query.Where(b => !b.IsFeatured && !b.IsMainFeature).OrderBy(_ => Guid.NewGuid())
+                    .Take(count - result.Length).ToArrayAsync();
                 result = [.. result, .. fillers];
             }
 
             return result;
         });
     }
+
+    public async Task<BlogPost[]> GetPostsAsync(int pageIndex, int pageSize, int categoryId = 0) =>
+        await GetPosts(pageIndex * pageSize, pageSize, categoryId);
+
 
     public async Task<BlogPost?> GetMainFeatureAsync()
     {
@@ -79,7 +86,6 @@ public class PostService : IPostService
             return await context.BlogPosts.AsNoTracking()
                 .Include(b => b.User).Include(b => b.Category)
                 .FirstOrDefaultAsync(b => b.IsPublished && b.IsMainFeature);
-
         });
     }
 
@@ -99,21 +105,7 @@ public class PostService : IPostService
         });
     }
 
-    public async Task<BlogPost[]> GetLatestAsync(int count, int categoryId = 0)
-    {
-        return await ExecuteOnContext(async context =>
-        {
-            var query = context.BlogPosts.AsNoTracking()
-                .Include(b => b.User).Include(b => b.Category)
-                .Where(b => b.IsPublished);
-            if (categoryId > 0)
-            {
-                query = query.Where(c => c.CategoryId == categoryId);
-            }
-
-            return await query.OrderByDescending(b => b.PublishedOn).Take(count).ToArrayAsync();
-        });
-    }
+    public async Task<BlogPost[]> GetLatestAsync(int count, int categoryId = 0) => await GetPosts(0, count, categoryId);
 
     public async Task<DetailPageModel> GetBySlugAsync(string slug, int count = 4)
     {
@@ -123,7 +115,7 @@ public class PostService : IPostService
                 .Include(b => b.Category).Include(b => b.User)
                 .FirstOrDefaultAsync(b => b.Slug == slug && b.IsPublished);
 
-            if(post is null)
+            if (post is null)
             {
                 return DetailPageModel.Empty();
             }
@@ -135,6 +127,26 @@ public class PostService : IPostService
                 .Take(count).ToArrayAsync();
 
             return new DetailPageModel(post, relatedPosts);
+        });
+    }
+
+
+    private async Task<BlogPost[]> GetPosts(int skip, int take, int categoryId)
+    {
+        return await ExecuteOnContext(async context =>
+        {
+            var query = context.BlogPosts.AsNoTracking()
+                .Include(b => b.User).Include(b => b.Category)
+                .Where(b => b.IsPublished);
+            if (categoryId > 0)
+            {
+                query = query.Where(c => c.CategoryId == categoryId);
+            }
+
+            return await query.OrderByDescending(b => b.PublishedOn)
+                .Skip(skip)
+                .Take(take)
+                .ToArrayAsync();
         });
     }
 }

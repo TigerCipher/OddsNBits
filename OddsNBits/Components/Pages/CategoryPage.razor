@@ -46,6 +46,9 @@ Main
                 }
                 <h5 class="font-weight-bold spanborder"><span>Latest</span></h5>
                 <BlogList Posts="_latest" />
+                <hr/>
+                <NavLink href=@($"/categories/{Slug}/all") class="btn btn-sm btn-outline-primary float-right">All @_category?.Name posts</NavLink>
+                <span class="w-100"></span>
             </div>
             <div class="col-md-4 pl-4">
                 <div class="sticky-top">
