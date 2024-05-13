@@ -22,22 +22,47 @@
         else
         {
             <div class="col-md-8">
-                <h5 class="font-weight-bold spanborder">
-                    <span>@_category?.Name Posts</span>
-                </h5>
-                <BlogList Posts="_posts"/>
-                <hr/>
-                <HxPager CurrentPageIndex="_pageIndex" TotalPages="_totalPages" CurrentPageIndexChanged="OnPageChanged"/>
-                @* <div class="d-flex justify-content-between"> *@
-                @* *@
-                @* </div> *@
+                <HxSearchBox DataProvider="ProvideSearchResults"
+                             Label="Post"
+                             TItem="BlogPost"
+                             ItemTitleSelector="p => p.Title"
+                             OnItemSelected="OnItemSelected"
+                             OnTextQueryTriggered="OnSearchAttempt"
+                             CssClass="py-3"
+                             Placeholder="Search">
+                    <DefaultContentTemplate>
+                        <div class="p-2 text-muted">Search for post by title...</div>
+                    </DefaultContentTemplate>
+                    <NotFoundTemplate>
+                        <div class="small py-2 px-3 text-muted">Post could not be found</div>
+                    </NotFoundTemplate>
+                </HxSearchBox>
+                @if (!string.IsNullOrWhiteSpace(_searchQuery))
+                {
+                    <h5 class="font-weight-bold spanborder">
+                        <span>Results for '@_searchQuery'</span>
+                    </h5>
+                    <BlogList Posts="_searchResults" />
+                    <HxButton Color="ThemeColor.Primary" Outline="true" OnClick="OnClear" Text="Clear Search" CssClass="float-right"/>
+                }
+                else
+                {
+                    <h5 class="font-weight-bold spanborder">
+                        <span>@_category?.Name Posts</span>
+                    </h5>
+                    <BlogList Posts="_posts" />
+                }
+                <hr />
+                <div class="d-flex justify-content-center">
+                    <HxPager CurrentPageIndex="_pageIndex" TotalPages="_totalPages" CurrentPageIndexChanged="OnPageChanged" />
+                </div>
             </div>
             <div class="col-md-4 pl-4">
                 <div class="sticky-top">
                     <h5 class="font-weight-bold spanborder">
                         <span>Popular in @_category?.Name</span>
                     </h5>
-                    <RankedList Posts="_popular"/>
+                    <RankedList Posts="_popular" />
                 </div>
             </div>
         }
@@ -53,6 +78,9 @@
 
     private BlogPost[] _posts = [];
     private BlogPost[] _popular = [];
+
+    private BlogPost[] _searchResults = [];
+    private string? _searchQuery;
 
     private int _pageIndex = 0;
     private const int PageSize = 5;
@@ -71,6 +99,11 @@
 
         _category = cat;
 
+        if (PageNumber != 0)
+        {
+            _pageIndex = PageNumber - 1;
+        }
+
         var posts = await Task.WhenAll(
             PostService.GetPopularAsync(5, cat.Id),
             PostService.GetPostsAsync(_pageIndex, PageSize, cat.Id)
@@ -87,7 +120,39 @@
     private async Task OnPageChanged(int idx)
     {
         _pageIndex = idx;
-        _posts = await PostService.GetPostsAsync(_pageIndex, PageSize, _category.Id);
+        if (!string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            _searchResults = await PostService.FindByTitleAsync(_searchQuery, _category.Id, _pageIndex, PageSize);
+        }
+        else
+        {
+            _posts = await PostService.GetPostsAsync(_pageIndex, PageSize, _category.Id);
+        }
+    }
+
+    private async Task<SearchBoxDataProviderResult<BlogPost>> ProvideSearchResults(SearchBoxDataProviderRequest request)
+    {
+        var posts = await PostService.FindByTitleAsync(request.UserInput, _category.Id, 10);
+        return new SearchBoxDataProviderResult<BlogPost>() { Data = posts };
+    }
+
+    private void OnItemSelected(BlogPost post)
+    {
+        NavigationManager.NavigateTo($"/posts/{post.Slug}");
+    }
+
+    private async Task OnSearchAttempt(string query)
+    {
+        _searchQuery = query;
+        _pageIndex = 0;
+        var total = await PostService.FindByTitleAsync(query, _category.Id);
+        _totalPages = (int)Math.Ceiling(total.Length / (double)PageSize);
+        _searchResults = await PostService.FindByTitleAsync(query, _category.Id, _pageIndex, PageSize);
+    }
+
+    private void OnClear()
+    {
+        NavigationManager.Refresh(true);
     }
 
 }

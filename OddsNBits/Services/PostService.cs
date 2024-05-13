@@ -29,6 +29,8 @@ public interface IPostService
     Task<BlogPost[]> GetPostsAsync(int pageIndex, int pageSize, int categoryId = 0);
     Task<BlogPost[]> GetPopularAsync(int count, int categoryId = 0);
     Task<BlogPost[]> GetLatestAsync(int count, int categoryId = 0);
+    Task<BlogPost[]> GetAllAsync(int categoryId = 0);
+    Task<BlogPost[]> FindByTitleAsync(string query, int categoryId = 0, int? pageIndex = null, int? pageSize = null);
     Task<DetailPageModel> GetBySlugAsync(string slug, int count = 4);
     Task<BlogPost?> GetMainFeatureAsync();
     Task<int> GetCountAsync(int categoryId = 0);
@@ -123,6 +125,39 @@ public class PostService : IPostService
     }
 
     public async Task<BlogPost[]> GetLatestAsync(int count, int categoryId = 0) => await GetPosts(0, count, categoryId);
+    public async Task<BlogPost[]> GetAllAsync(int categoryId = 0)
+    {
+        return await ExecuteOnContext(async context =>
+        {
+            var query = context.BlogPosts.AsNoTracking()
+                .Include(b => b.User).Include(b => b.Category)
+                .Where(b => b.IsPublished);
+            if (categoryId > 0)
+            {
+                query = query.Where(c => c.CategoryId == categoryId);
+            }
+
+            return await query.OrderByDescending(b => b.PublishedOn).ToArrayAsync();
+        });
+    }
+
+    public async Task<BlogPost[]> FindByTitleAsync(string lookfor, int categoryId = 0, int? pageIndex = null, int? pageSize = null)
+    {
+        return await ExecuteOnContext(async context =>
+        {
+            var query = context.BlogPosts.AsNoTracking()
+                .Include(b => b.User).Include(b => b.Category)
+                .Where(b => b.IsPublished && b.Title.ToUpper().Contains(lookfor.ToUpper()));
+            if (categoryId > 0)
+            {
+                query = query.Where(c => c.CategoryId == categoryId);
+            }
+
+            return await query.OrderByDescending(b => b.Title)
+                .Skip(pageIndex * pageSize ?? 0)
+                .Take(pageSize ?? int.MaxValue).ToArrayAsync();
+        });
+    }
 
     public async Task<DetailPageModel> GetBySlugAsync(string slug, int count = 4)
     {
