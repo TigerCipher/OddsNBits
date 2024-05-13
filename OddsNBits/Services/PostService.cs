@@ -31,6 +31,7 @@ public interface IPostService
     Task<BlogPost[]> GetLatestAsync(int count, int categoryId = 0);
     Task<DetailPageModel> GetBySlugAsync(string slug, int count = 4);
     Task<BlogPost?> GetMainFeatureAsync();
+    Task<int> GetCountAsync(int categoryId = 0);
 }
 
 public class PostService : IPostService
@@ -86,6 +87,22 @@ public class PostService : IPostService
             return await context.BlogPosts.AsNoTracking()
                 .Include(b => b.User).Include(b => b.Category)
                 .FirstOrDefaultAsync(b => b.IsPublished && b.IsMainFeature);
+        });
+    }
+
+    public Task<int> GetCountAsync(int categoryId = 0)
+    {
+        return ExecuteOnContext(async context =>
+        {
+            var query = context.BlogPosts.AsNoTracking()
+                .Where(b => b.IsPublished);
+            if (categoryId > 0)
+            {
+                query = query.Where(c => c.CategoryId == categoryId);
+            }
+
+            var ar = await query.ToArrayAsync();
+            return ar.Length;
         });
     }
 

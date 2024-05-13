@@ -3,9 +3,13 @@
 
 @using OddsNBits.Data.Entities
 
+@rendermode InteractiveServer
+
 @inject IPostService PostService
 @inject ICategoryService CategoryService
 @inject NavigationManager NavigationManager
+
+<PageTitle>@_category?.Name | Odds &amp; Bits</PageTitle>
 
 <div class="container mt-5 mb-5">
     <div class="row">
@@ -18,13 +22,22 @@
         else
         {
             <div class="col-md-8">
-                <h5 class="font-weight-bold spanborder"><span>@_category?.Name Posts</span></h5>
+                <h5 class="font-weight-bold spanborder">
+                    <span>@_category?.Name Posts</span>
+                </h5>
                 <BlogList Posts="_posts"/>
+                <hr/>
+                <HxPager CurrentPageIndex="_pageIndex" TotalPages="_totalPages" CurrentPageIndexChanged="OnPageChanged"/>
+                @* <div class="d-flex justify-content-between"> *@
+                @* *@
+                @* </div> *@
             </div>
             <div class="col-md-4 pl-4">
                 <div class="sticky-top">
-                    <h5 class="font-weight-bold spanborder"><span>Popular in @_category?.Name</span></h5>
-                    <RankedList Posts="_popular" />
+                    <h5 class="font-weight-bold spanborder">
+                        <span>Popular in @_category?.Name</span>
+                    </h5>
+                    <RankedList Posts="_popular"/>
                 </div>
             </div>
         }
@@ -32,11 +45,9 @@
 </div>
 
 @code {
-    [Parameter]
-    public string Slug { get; set; }
+    [Parameter] public string Slug { get; set; }
 
-    [Parameter]
-    public int PageNumber { get; set; }
+    [Parameter] public int PageNumber { get; set; }
 
     private Category _category;
 
@@ -45,6 +56,7 @@
 
     private int _pageIndex = 0;
     private const int PageSize = 5;
+    private int _totalPages;
 
     private bool _hasNoPosts;
 
@@ -67,6 +79,15 @@
         _posts = posts[1];
 
         _hasNoPosts = _posts.Any();
+
+
+        _totalPages = (int)Math.Ceiling(await PostService.GetCountAsync(cat.Id) / (double)PageSize);
+    }
+
+    private async Task OnPageChanged(int idx)
+    {
+        _pageIndex = idx;
+        _posts = await PostService.GetPostsAsync(_pageIndex, PageSize, _category.Id);
     }
 
 }
