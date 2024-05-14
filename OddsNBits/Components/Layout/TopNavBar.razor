@@ -17,26 +17,16 @@
             {
                 <HxNavLink Href=@($"/categories/{c.Slug}")>@c.Name</HxNavLink>
             }
-            @* <HxDropdown> *@
-            @*     <HxDropdownToggleElement ElementName="a" Caret="true" role="button">Categories</HxDropdownToggleElement> *@
-            @*     <HxDropdownMenu> *@
-            @*         <HxDropdownItemNavLink Href="/category">Category</HxDropdownItemNavLink> *@
-            @*         <HxDropdownItemNavLink Href="#">Another action</HxDropdownItemNavLink> *@
-            @*         <HxDropdownDivider /> *@
-            @*         <HxDropdownItemNavLink Href="#">Something else here</HxDropdownItemNavLink> *@
-            @*     </HxDropdownMenu> *@
-            @* </HxDropdown> *@
+            <HxDropdown>
+                <HxDropdownToggleElement ElementName="a" Caret="true" role="button">All Categories</HxDropdownToggleElement>
+                <HxDropdownMenu>
+                    @foreach(var c in _allCategories)
+                    {
+                        <HxDropdownItemNavLink href=@($"/categories/{c.Slug}")>@c.Name</HxDropdownItemNavLink>
+                    }
+                </HxDropdownMenu>
+            </HxDropdown>
         </HxNav>
-
-        @*This form seems to cause issues when using other forms such as the login form*@
-        @*<EditForm Model="@Input" method="post" FormName="SearchBar" OnValidSubmit="OnSearch">
-        <DataAnnotationsValidator />
-        <div class="d-flex">
-        <HxInputText CssClass="me-2" Placeholder="Search" @bind-Value="Input.Query" InputMode="InputMode.Search"/>
-        <ValidationMessage For="() => Input.Query" class="text-danger" />
-        <HxSubmit Color="ThemeColor.Success" Outline="true">Search</HxSubmit>
-        </div>
-        </EditForm>*@
 
         <div class="d-flex px-3">
             <AuthorizeView>
@@ -55,25 +45,15 @@
                         }
                         <HxIcon Icon="@BootstrapIcon.Person"/> @context.User.DisplayName()
                     </HxNavLink>
-                    @* <NavLink Href="Account/Manage"> *@
-                    @*     <HxIcon Icon="@BootstrapIcon.Person"/> @context.User.DisplayName() *@
-                    @* </NavLink> *@
                     <div class="nav-item px-3">
                         <form action="Account/Logout" method="post">
                             <AntiforgeryToken/>
                             <input type="hidden" name="ReturnUrl" value="@currentUrl"/>
                             <HxSubmit Color="ThemeColor.Danger" Outline="true">Logout</HxSubmit>
-                            @*<button type="submit" class="nav-link">
-                            Logout
-                            </button>*@
                         </form>
                     </div>
                 </Authorized>
                 <NotAuthorized>
-                    @* <NavLink href="Account/Register" class="btn btn-primary"> *@
-                    @*     Register *@
-                    @* </NavLink> *@
-
                     <NavLink href="Account/Login" class="btn btn-primary" style="margin-left: 3px">
                         Login
                     </NavLink>
@@ -90,6 +70,7 @@
     private InputModel Input { get; set; } = new();
 
     private Category[] _categories = [];
+    private Category[] _allCategories = [];
     private const int MaxShownCategories = 5;
 
 
@@ -106,6 +87,7 @@
         var categories = await CategoryService.GetCategoriesAsync();
 
         // Only show the first 5 featured categories - these will be on the navbar AND the dropdown
+        _allCategories = categories.ToArray();
         _categories = categories.Where(c => c.Featured).Take(MaxShownCategories).ToArray();
 
         if(_categories.Length < MaxShownCategories)

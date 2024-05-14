@@ -40,7 +40,7 @@
                 @if (!string.IsNullOrWhiteSpace(_searchQuery))
                 {
                     <h5 class="font-weight-bold spanborder">
-                        <span>Results for '@_searchQuery'</span>
+                        <span>Results for &quot;@(_searchQuery)&quot;</span>
                     </h5>
                     <BlogList Posts="_searchResults" />
                     <HxButton Color="ThemeColor.Primary" Outline="true" OnClick="OnClear" Text="Clear Search" CssClass="float-right"/>
