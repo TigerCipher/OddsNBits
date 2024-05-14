@@ -85,7 +85,14 @@
             <BlogListBlock Posts="_related" />
         </div>
         <hr />
-        <Comments BlogId="_post.Id" />
+        <AuthorizeView>
+            <Authorized>
+                <Comments BlogId="_post.Id" />
+            </Authorized>
+            <NotAuthorized>
+                Please sign in to view comments.
+            </NotAuthorized>
+        </AuthorizeView>
     </div>
 }
 

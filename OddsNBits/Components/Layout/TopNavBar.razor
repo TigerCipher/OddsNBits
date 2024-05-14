@@ -29,11 +29,15 @@
         </HxNav>
 
         <div class="d-flex px-3">
-            <AuthorizeView>
+            <AuthorizeView Roles="Admin">
                 <Authorized>
                     <HxNavLink Href="admin/dashboard">
                         <HxIcon Icon="@BootstrapIcon.Briefcase"/> Dashboard
                     </HxNavLink>
+                </Authorized>
+            </AuthorizeView>
+            <AuthorizeView>
+                <Authorized>
                     <HxNavLink Href="Account/Manage">
                         @if (!string.IsNullOrWhiteSpace(context.User.ProfileImage()))
                         {

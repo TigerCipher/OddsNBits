@@ -263,3 +263,5 @@ __pycache__/
 OddsNBits/appsettings.json
 OddsNBits/wwwroot/img/posts
 OddsNBits/wwwroot/img/users
+OddsNBits/Properties/PublishProfiles/oddsnbits - Web Deploy.pubxml
+OddsNBits/Properties/ServiceDependencies/oddsnbits - Web Deploy/profile.arm.json
