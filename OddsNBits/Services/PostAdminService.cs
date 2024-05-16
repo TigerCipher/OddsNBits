@@ -160,6 +160,7 @@ public class PostAdminService : IPostAdminService
                     dbpost.Content = post.Content;
                     dbpost.CategoryId = post.CategoryId;
                     dbpost.Image = post.Image;
+                    dbpost.ViewCount = post.ViewCount;
 
 
                     if (post.IsPublished && !dbpost.IsPublished)

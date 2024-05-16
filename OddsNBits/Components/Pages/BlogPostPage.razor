@@ -8,6 +8,7 @@
 @* @inject IJSRuntime Js *@
 
 @inject IPostService PostService
+@inject IPostAdminService PostAdmin
 @inject NavigationManager NavigationManager
 
 <PageTitle>@_post.Title | Odds &amp; Bits</PageTitle>
@@ -121,5 +122,15 @@
         _post = post.Post!;
 
         _related = post.Related;
+
+        // Increment view count for ranked lists. For now, not unique views
+        try
+        {
+            _post.ViewCount++;
+            await PostAdmin.SaveAsync(_post, _post.UserId);
+        }catch(Exception)
+        {
+            // Ignore failure to save
+        }
     }
 }
