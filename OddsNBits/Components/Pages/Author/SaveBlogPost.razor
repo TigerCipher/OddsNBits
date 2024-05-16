@@ -253,6 +253,7 @@
         }
         catch (Exception e)
         {
+            Debug.WriteLine(e.Message);
             Debug.WriteLine($"[WARNING] Failed to delete image: {imageUrl} from {fullpath}");
         }
     }

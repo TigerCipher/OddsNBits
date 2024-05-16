@@ -222,6 +222,7 @@
         }
         catch (Exception ex)
         {
+            Debug.WriteLine(ex.Message);
             Messenger.AddError($"Failed to delete post '{title}'");
             _isLoading = false;
             return;
@@ -236,7 +237,7 @@
         }
         catch (Exception e)
         {
-            Debug.WriteLine($"[WARNING] Failed to delete image: {imageUrl} from {fullpath}");
+            Debug.WriteLine($"[WARNING] Failed to delete image: {imageUrl} from {fullpath}: {e.Message}");
         }
 
         await _gridComponent.RefreshDataAsync();

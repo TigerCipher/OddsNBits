@@ -167,6 +167,7 @@
         }
         catch (Exception ex)
         {
+            Debug.WriteLine(ex.Message);
             Messenger.AddError($"Failed to delete category '{title}'");
             _isLoading = false;
             return;
